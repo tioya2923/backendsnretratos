@@ -44,8 +44,8 @@ if (!empty ($approvalCode)) {
 
                             $mail->isHTML(true);
                             $mail->Subject = 'Conta aprovada!';
-                            $mail->Body    = "Parabéns, a sua conta foi aprovada! Podes iniciar sessão aqui: http://localhost:3000/login<br>Insira o seguinte código: !ParoquiadeSNBX";
-                            $mail->AltBody = "Parabéns, a sua conta foi aprovada! Podes iniciar sessão aqui: http://localhost:3000/login/login\nInsira o seguinte código: !ParoquiadeSNBX";
+                            $mail->Body    = "Parabéns, a sua conta foi aprovada! Podes iniciar sessão aqui: https://frontend-sn-e0e8d7df269a.herokuapp.com/login<br>Insira o seguinte código: !ParoquiadeSNBX";
+                            $mail->AltBody = "Parabéns, a sua conta foi aprovada! Podes iniciar sessão aqui: https://frontend-sn-e0e8d7df269a.herokuapp.com/login\nInsira o seguinte código: !ParoquiadeSNBX";
 
                             $mail->send();
                             echo "Usuário aprovado com sucesso!";
