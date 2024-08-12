@@ -2,9 +2,7 @@
 
 $origensPermitidas = [
     'http://localhost:3000',
-    'https://frontend-family-b1523b1674d4.herokuapp.com',
-    'https://familiagouveia.pt'
-   
+  
  
     ];
 

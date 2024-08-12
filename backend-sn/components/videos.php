@@ -7,9 +7,9 @@ use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 
 
-$bucketName = 'familia-gouveia';
-$IAM_KEY = getenv('AWS_IAM_KEY');
-$IAM_SECRET = getenv('AWS_IAM_SECRET');
+$bucketName = 'retratos-paroquia-sao-nicolau';
+$IAM_KEY = getenv('AWS_ACCESS_KEY_ID');
+$IAM_SECRET = getenv('AWS_SECRET_ACCESS_KEY');
 
 // Configurar cliente S3
 $s3 = S3Client::factory([

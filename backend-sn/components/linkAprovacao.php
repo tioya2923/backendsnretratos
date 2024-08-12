@@ -34,18 +34,18 @@ if (!empty ($approvalCode)) {
                             $mail->isSMTP();
                             $mail->Host = 'smtp.gmail.com';
                             $mail->SMTPAuth = true;
-                            $mail->Username = 'familia16gouveia@gmail.com';
-                            $mail->Password = 'yapmmohabliiqyny';
+                            $mail->Username = 'retratospsn@gmail.com';
+                            $mail->Password = 'thqyngnejodzttwl';
                             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
                             $mail->Port = 465;
 
-                            $mail->setFrom('familia16gouveia@gmail.com', 'Família Gouveia');
+                            $mail->setFrom('retratospsn@gmail.com', 'PAROQUIA DE SAO NICOLAU');
                             $mail->addAddress($userEmail);
 
                             $mail->isHTML(true);
                             $mail->Subject = 'Conta aprovada!';
-                            $mail->Body    = "Parabéns, a sua conta foi aprovada! Podes iniciar sessão aqui: https://familiagouveia.pt/login<br>Insira o seguinte código: FAMILIAGOUVEIA7916!";
-                            $mail->AltBody = "Parabéns, a sua conta foi aprovada! Podes iniciar sessão aqui: https://familiagouveia.pt/login\nInsira o seguinte código: FAMILIAGOUVEIA7916!";
+                            $mail->Body    = "Parabéns, a sua conta foi aprovada! Podes iniciar sessão aqui: http://localhost:3000/login<br>Insira o seguinte código: !ParoquiadeSNBX";
+                            $mail->AltBody = "Parabéns, a sua conta foi aprovada! Podes iniciar sessão aqui: http://localhost:3000/login/login\nInsira o seguinte código: !ParoquiadeSNBX";
 
                             $mail->send();
                             echo "Usuário aprovado com sucesso!";

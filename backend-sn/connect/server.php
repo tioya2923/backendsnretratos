@@ -5,7 +5,7 @@ require_once 'cors.php';
 
 
 
-$clearDbUrl = getenv('CLEARDB_DATABASE_URL') ?: 'mysql://be3b65a499ee3e:5786f35a@us-cluster-east-01.k8s.cleardb.net/heroku_4bff0a00d5ce2e6';
+$clearDbUrl = getenv('CLEARDB_DATABASE_URL') ?: 'mysql://bca7e15601a779:338412bf@us-cluster-east-01.k8s.cleardb.net/heroku_0a25a194d779a89';
                                            
 
 // Parse the URL and extract the connection details

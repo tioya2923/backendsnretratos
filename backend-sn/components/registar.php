@@ -5,7 +5,8 @@ ini_set('display_errors', 1); // Desativa a exibição de erros
 
 function handleUncaughtException($e) {
     error_log($e->getMessage()); // Loga o erro
-    exit('Olá! Estaremos juntos brevemente!'); // Mensagem amigável para o usuário
+    exit('Erro: ' . $e->getMessage());
+    //exit('Olá! Estaremos juntos brevemente!'); // Mensagem amigável para o usuário
 }
 
 set_exception_handler('handleUncaughtException'); // Define o manipulador de exceções
@@ -42,11 +43,11 @@ if ($stmt = $conn->prepare($sql)) {
 
 $approvalCode = bin2hex(random_bytes(16));
 
-$approvalUrl = "https://backend-family-c1c363294a5e.herokuapp.com/components/linkAprovacao.php?code=$approvalCode";
+$approvalUrl = "http://localhost:8000/backend-sn/components/linkAprovacao.php?code=$approvalCode";
 
 
 
-$adminEmail = 'familia16gouveia@gmail.com';
+$adminEmail = 'retratospsn@gmail.com';
 $sql = "INSERT INTO usuarios (name, email, password, status, approval_code) VALUES (?, ?, ?, 'pendente', ?)";
 if ($stmt = $conn->prepare($sql)) {
     $stmt->bind_param("ssss", $name, $email, $passwordHash, $approvalCode);
@@ -57,12 +58,12 @@ if ($stmt = $conn->prepare($sql)) {
                 $mail->isSMTP();
                 $mail->Host = 'smtp.gmail.com';
                 $mail->SMTPAuth = true;
-                $mail->Username = 'familia16gouveia@gmail.com';
-                $mail->Password = 'yapmmohabliiqyny';
+                $mail->Username = 'retratospsn@gmail.com';
+                $mail->Password = 'thqyngnejodzttwl'; 
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
                 $mail->Port = 465;
 
-                $mail->setFrom('familia16gouveia@gmail.com', 'Administrador');
+                $mail->setFrom('retratospsn@gmail.com', 'Administrador');
                 $mail->addAddress($adminEmail);
 
                 $mail->isHTML(true);
