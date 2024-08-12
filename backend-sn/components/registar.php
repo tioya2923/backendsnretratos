@@ -5,8 +5,8 @@ ini_set('display_errors', 1); // Desativa a exibição de erros
 
 function handleUncaughtException($e) {
     error_log($e->getMessage()); // Loga o erro
-    exit('Erro: ' . $e->getMessage());
-    //exit('Olá! Estaremos juntos brevemente!'); // Mensagem amigável para o usuário
+    //exit('Erro: ' . $e->getMessage());
+    exit('Olá! Estaremos juntos brevemente!'); // Mensagem amigável para o usuário
 }
 
 set_exception_handler('handleUncaughtException'); // Define o manipulador de exceções
@@ -43,7 +43,7 @@ if ($stmt = $conn->prepare($sql)) {
 
 $approvalCode = bin2hex(random_bytes(16));
 
-$approvalUrl = "http://localhost:8000/backend-sn/components/linkAprovacao.php?code=$approvalCode";
+$approvalUrl = "https://backend-sn-a37ffec6bc3e.herokuapp.com/components/linkAprovacao.php?code=$approvalCode";
 
 
 
@@ -72,7 +72,7 @@ if ($stmt = $conn->prepare($sql)) {
                 $mail->AltBody = "O usuário $name se registrou. Aprovar? $approvalUrl";
 
                 $mail->send();
-                echo 'Registo feito com sucesso. Aguardando aprovação do administrador.';
+                echo 'Registo feito com sucesso. Aguardando aprovação do Administrador.';
             } catch (Exception $e) {
                 handleUncaughtException($e); // Chama o manipulador de exceções personalizado
             }
