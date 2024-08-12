@@ -25,7 +25,6 @@ if (isset($_FILES['image'])) {
             $image = $_FILES['image'];
             $filename = mysqli_real_escape_string($conn, $image['name'][$key]);
             $nome = isset($_POST['nome']) ? mysqli_real_escape_string($conn, $_POST['nome']) : 'Nome padrão';
-            $descricao = isset($_POST['descricao']) ? mysqli_real_escape_string($conn, $_POST['descricao']) : 'Descrição padrão';
             $pasta = isset($_POST['pasta']) ? mysqli_real_escape_string($conn, $_POST['pasta']) : 'pasta_padrao';
             
             try {
@@ -38,8 +37,8 @@ if (isset($_FILES['image'])) {
                     'ContentType' => 'image/png'
                 ]);
 
-                $stmt = $conn->prepare("INSERT INTO fotos (nome, foto, descricao) VALUES (?, ?, ?)");
-                $stmt->bind_param("sss", $nome, $key, $descricao);
+                $stmt = $conn->prepare("INSERT INTO fotos (nome, foto) VALUES (?, ?)");
+                $stmt->bind_param("ss", $nome, $key);
 
                 if ($stmt->execute()) {
                     echo "Foto enviada com sucesso!";
