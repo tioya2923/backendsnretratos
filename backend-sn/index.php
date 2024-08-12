@@ -1,1 +1,1 @@
-Página para a família Gouveia
+Página para a Comunidade Paroquial de São Nicolau.
