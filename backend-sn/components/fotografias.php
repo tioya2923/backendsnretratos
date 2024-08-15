@@ -32,7 +32,7 @@ while ($row = $result->fetch_assoc()) {
     $fotos = array();
 
     while ($rowFoto = $resultFotos->fetch_assoc()) {
-        $rowFoto['foto'] = $s3->getObjectUrl($bucketName, $rowFoto['foto']);
+        $rowFoto['arquivo'] = $s3->getObjectUrl($bucketName, $rowFoto['arquivo']); // Altere 'foto' para 'arquivo'
         $fotos[] = $rowFoto;
     }
 
