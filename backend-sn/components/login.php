@@ -48,6 +48,6 @@ if ($result->num_rows > 0) {
         echo json_encode(["message" => "Senha incorreta, tente novamente"]);
     }
 } else {
-    echo json_encode(["message" => "Usuário não encontrado, por favor, registre-se"]);
+    echo json_encode(["message" => "Usuário não encontrado, por favor, regista-te"]);
 }
 ?>

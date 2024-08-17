@@ -10,7 +10,6 @@ $bucketName = 'retratos-paroquia-sao-nicolau';
 $IAM_KEY = getenv('AWS_ACCESS_KEY_ID');
 $IAM_SECRET = getenv('AWS_SECRET_ACCESS_KEY');
 
-
 $s3 = new S3Client([
     'version' => 'latest',
     'region'  => 'us-east-1',
@@ -39,7 +38,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     } catch (S3Exception $e) {
         echo json_encode(['error' => $e->getMessage()]);
     }
-    
 }
 
 $conn->close();

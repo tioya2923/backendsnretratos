@@ -39,13 +39,13 @@ if (!empty ($approvalCode)) {
                             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
                             $mail->Port = 465;
 
-                            $mail->setFrom('retratospsn@gmail.com', 'PAROQUIA DE SAO NICOLAU');
+                            $mail->setFrom('retratospsn@gmail.com', utf8_decode('Paróquia de São Nicolau'));
                             $mail->addAddress($userEmail);
 
                             $mail->isHTML(true);
                             $mail->Subject = 'Conta aprovada!';
-                            $mail->Body    = "Parabéns, a sua conta foi aprovada! Podes iniciar sessão aqui: https://frontend-sn-e0e8d7df269a.herokuapp.com/login<br>Insira o seguinte código: !ParoquiadeSNBX";
-                            $mail->AltBody = "Parabéns, a sua conta foi aprovada! Podes iniciar sessão aqui: https://frontend-sn-e0e8d7df269a.herokuapp.com/login\nInsira o seguinte código: !ParoquiadeSNBX";
+                            $mail->Body = "Parabéns, registo aprovado! <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/login'>Iniciar sessão</a><br>Insira o seguinte código: !ParoquiadeSNBX";
+                            $mail->AltBody = "Parabéns, registo aprovado! <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/login'>Iniciar sessão</a>\n<br>Insira o seguinte código: !ParoquiadeSNBX";
 
                             $mail->send();
                             echo "Usuário aprovado com sucesso!";

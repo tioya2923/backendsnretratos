@@ -47,6 +47,7 @@ $approvalUrl = "https://backend-sn-a37ffec6bc3e.herokuapp.com/components/linkApr
 
 
 
+
 $adminEmail = 'retratospsn@gmail.com';
 $sql = "INSERT INTO usuarios (name, email, password, status, approval_code) VALUES (?, ?, ?, 'pendente', ?)";
 if ($stmt = $conn->prepare($sql)) {
@@ -68,11 +69,15 @@ if ($stmt = $conn->prepare($sql)) {
 
                 $mail->isHTML(true);
                 $mail->Subject = 'Novo registro';
-                $mail->Body    = "O usuário $name se registrou. Aprovar? <a href='$approvalUrl'>$approvalUrl</a>";
+                $mail->Body = "O usuário $name se registrou. <br><a href='$approvalUrl'>Aprovar?</a><br>";
+                //$mail->Body    = "O usuário $name se registrou. Aprovar? <a href='$approvalUrl'>$approvalUrl</a>";
                 $mail->AltBody = "O usuário $name se registrou. Aprovar? $approvalUrl";
 
+                
+
+
                 $mail->send();
-                echo 'Registo feito com sucesso. Aguardando aprovação do Administrador.';
+                echo 'Registo feito com sucesso. Aguarde pela aprovação do Administrador.';
             } catch (Exception $e) {
                 handleUncaughtException($e); // Chama o manipulador de exceções personalizado
             }
