@@ -43,7 +43,7 @@ if (isset($_FILES['file'])) {
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port = 465;
 
-        $mail->setFrom('retratospsn@gmail.com', 'Administrador');
+        $mail->setFrom('retratospsn@gmail.com', 'Igreja de São Nicolau');
         $mail->addAddress($emailAdmin);
 
         $mail->isHTML(true);
