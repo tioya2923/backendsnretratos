@@ -1,0 +1,636 @@
+Para garantir que as inscrições sejam sejam corretamente, corrija os seguintes códigos para que todas as as opçoes sejam como o o tipo jnatr e almoço.
+CREATE TABLE `refeicoes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nome_completo` varchar(255) NOT NULL,
+  `data` date NOT NULL,
+  `jantar` varchar(255)
+  àlmoco` varchar(255) 
+  `levar_refeicao` varchar(255) ',
+  `almoco_mais_cedo` tvarchar(255),
+  `almoco_mais_tarde` varchar(255),
+  `jantar_mais_cedo` varchar(255) ,
+  `jantar_mais_tarde` varchar(255),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+<?php
+require_once '../connect/server.php';
+require_once '../connect/cors.php';
+require_once '../vendor/autoload.php';
+
+// Verificar a conexão
+if ($conn->connect_error) {
+    die("Conexão falhou: " . $conn->connect_error);
+}
+
+// Endpoint para buscar nomes
+if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['nomes'])) {
+    $sql = "SELECT id, nome_completo FROM nomes";
+    $result = $conn->query($sql);
+    $nomes = [];
+    while ($row = $result->fetch_assoc()) {
+        $nomes[] = $row;
+    }
+    echo json_encode($nomes);
+    exit();
+}
+
+// Função para limpar registros antigos
+function limparRegistrosAntigos($conn) {
+    // Calcular a data limite para exclusão (30 dias atrás)
+    $data_limite = date('Y-m-d', strtotime('-30 days'));
+
+    // Excluir registros antigos
+    $sql = "DELETE FROM refeicoes WHERE data < '$data_limite'";
+    if ($conn->query($sql) === TRUE) {
+        echo json_encode(["message" => "Registros antigos excluídos com sucesso"]);
+    } else {
+        echo json_encode(["message" => "Erro ao excluir registros antigos: " . $conn->error]);
+    }
+
+    // Atualizar a data da última limpeza
+    $hoje = date('Y-m-d');
+    $sql = "UPDATE limpeza SET ultima_limpeza = '$hoje' WHERE id = 1";
+    $conn->query($sql);
+}
+
+// Verificar se é necessário realizar a limpeza
+$sql = "SELECT ultima_limpeza FROM limpeza WHERE id = 1";
+$result = $conn->query($sql);
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $ultima_limpeza = $row['ultima_limpeza'];
+    $data_limite = date('Y-m-d', strtotime('-30 days'));
+
+    if ($ultima_limpeza < $data_limite) {
+        limparRegistrosAntigos($conn);
+    }
+} else {
+    // Se não houver registro de limpeza, criar um e realizar a limpeza
+    $sql = "INSERT INTO limpeza (ultima_limpeza) VALUES (CURDATE())";
+    $conn->query($sql);
+    limparRegistrosAntigos($conn);
+}
+
+// Adicionar Refeição
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $data = json_decode(file_get_contents("php://input"), true);
+    error_log("Dados recebidos: " . print_r($data, true));
+    if (isset($data['data'], $data['tipo_refeicao'], $data['nomes_completos'], $data['levar_refeicao'], $data['almoco_mais_cedo'], $data['almoco_mais_tarde'], $data['jantar_mais_cedo'], $data['jantar_mais_tarde']) && is_array($data['nomes_completos'])) {
+        $data_refeicao = $data['data'];
+        $tipo_refeicao = $data['tipo_refeicao'];
+        $nomes_completos = $data['nomes_completos'];
+        $levar_refeicao = filter_var($data['levar_refeicao'], FILTER_VALIDATE_BOOLEAN);
+        $almoco_mais_cedo = filter_var($data['almoco_mais_cedo'], FILTER_VALIDATE_BOOLEAN);
+        $almoco_mais_tarde = filter_var($data['almoco_mais_tarde'], FILTER_VALIDATE_BOOLEAN);
+        $jantar_mais_cedo = filter_var($data['jantar_mais_cedo'], FILTER_VALIDATE_BOOLEAN);
+        $jantar_mais_tarde = filter_var($data['jantar_mais_tarde'], FILTER_VALIDATE_BOOLEAN);
+
+        foreach ($nomes_completos as $nome_completo) {
+            // Verificar se o nome já está inscrito para o mesmo dia e tipo de refeição
+            $check_sql = "SELECT * FROM refeicoes WHERE nome_completo = ? AND data = ? AND tipo_refeicao = ?";
+            $stmt = $conn->prepare($check_sql);
+            $stmt->bind_param("sss", $nome_completo, $data_refeicao, $tipo_refeicao);
+            $stmt->execute();
+            $check_result = $stmt->get_result();
+            if ($check_result->num_rows > 0) {
+                echo json_encode(["message" => "Já inscrito para esta refeição", "nome" => $nome_completo]);
+                exit();
+            }
+
+            $sql = "INSERT INTO refeicoes (nome_completo, data, tipo_refeicao, levar_refeicao, almoco_mais_cedo, almoco_mais_tarde, jantar_mais_cedo, jantar_mais_tarde) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sssiiiii", $nome_completo, $data_refeicao, $tipo_refeicao, $levar_refeicao, $almoco_mais_cedo, $almoco_mais_tarde, $jantar_mais_cedo, $jantar_mais_tarde);
+            if ($stmt->execute() !== TRUE) {
+                echo json_encode(["message" => "Erro ao adicionar refeição: " . $conn->error]);
+                exit();
+            }
+        }
+        echo json_encode(["message" => "Refeições adicionadas com sucesso"]);
+    } else {
+        echo json_encode(["message" => "Dados incompletos"]);
+    }
+}
+
+// Obter Refeições
+if ($_SERVER['REQUEST_METHOD'] == 'GET' && !isset($_GET['nomes'])) {
+    $sql = "SELECT * FROM refeicoes";
+    $result = $conn->query($sql);
+    $refeicoes = [];
+    while ($row = $result->fetch_assoc()) {
+        $refeicoes[] = $row;
+    }
+    echo json_encode($refeicoes);
+}
+
+// Obter Totais de Refeições
+if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['totais'])) {
+    $sql = "SELECT 
+                SUM(CASE WHEN tipo_refeicao = 'almoco' AND almoco_mais_cedo = 0 AND almoco_mais_tarde = 0 THEN 1 ELSE 0 END) AS almoco,
+                SUM(CASE WHEN almoco_mais_cedo = 1 THEN 1 ELSE 0 END) AS almoco_mais_cedo,
+                SUM(CASE WHEN almoco_mais_tarde = 1 THEN 1 ELSE 0 END) AS almoco_mais_tarde,
+                SUM(CASE WHEN tipo_refeicao = 'jantar' AND jantar_mais_cedo = 0 AND jantar_mais_tarde = 0 THEN 1 ELSE 0 END) AS jantar,
+                SUM(CASE WHEN jantar_mais_cedo = 1 THEN 1 ELSE 0 END) AS jantar_mais_cedo,
+                SUM(CASE WHEN jantar_mais_tarde = 1 THEN 1 ELSE 0 END) AS jantar_mais_tarde,
+                SUM(CASE WHEN levar_refeicao = 1 THEN 1 ELSE 0 END) AS levar_refeicao
+            FROM refeicoes";
+    $result = $conn->query($sql);
+    $totais = $result->fetch_assoc();
+    echo json_encode($totais);
+}
+
+// Excluir Refeição
+if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+    $data = json_decode(file_get_contents("php://input"), true);
+    if (isset($data['id'])) {
+        $id = $data['id'];
+        $sql = "DELETE FROM refeicoes WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $id);
+        if ($stmt->execute() === TRUE) {
+            echo json_encode(["message" => "Refeição excluída com sucesso"]);
+        } else {
+            echo json_encode(["message" => "Erro ao excluir refeição: " . $conn->error]);
+        }
+    } else {
+        echo json_encode(["message" => "ID não fornecido"]);
+    }
+}
+
+$conn->close();
+?>
+
+
+
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
+import '../../Styles/InscritosRefeicoes.css'; // Importar o arquivo CSS
+
+const InscritosRefeicoes = () => {
+    const [refeicoes, setRefeicoes] = useState([]);
+    const [totais, setTotais] = useState({});
+    const [semana, setSemana] = useState('');
+
+    const backendUrl = process.env.REACT_APP_BACKEND_URL;
+
+    useEffect(() => {
+        // Buscar refeições
+        axios.get(`${backendUrl}components/refeicoes.php`)
+            .then(response => {
+                if (Array.isArray(response.data)) {
+                    setRefeicoes(response.data);
+                } else {
+                    console.error('A resposta não é um array:', response.data);
+                }
+            })
+            .catch(error => console.error('Erro ao buscar refeições:', error));
+
+        // Buscar totais de refeições
+        axios.get(`${backendUrl}components/refeicoes.php?totais=true`)
+            .then(response => {
+                setTotais(response.data);
+            })
+            .catch(error => console.error('Erro ao buscar totais de refeições:', error));
+
+        // Calcular o intervalo de datas dos próximos 7 dias
+        const hoje = new Date();
+        const primeiroDia = new Date(hoje);
+        const ultimoDia = new Date(hoje);
+        ultimoDia.setDate(hoje.getDate() + 6);
+        const formatoData = { day: 'numeric', month: 'long' };
+
+        const intervaloSemana = `${capitalizeFirstLetter(primeiroDia.toLocaleDateString('pt-PT', formatoData))} a ${capitalizeFirstLetter(ultimoDia.toLocaleDateString('pt-PT', formatoData))}`;
+        setSemana(intervaloSemana);
+    }, [backendUrl]);
+
+    const handleDelete = (id, dataRefeicao) => {
+        const hoje = new Date().toDateString();
+        const dataRefeicaoStr = new Date(dataRefeicao).toDateString();
+
+        if (hoje !== dataRefeicaoStr) {
+            axios.delete(`${backendUrl}components/refeicoes.php`, { data: { id } })
+                .then(response => {
+                    console.log(response.data);
+                    setRefeicoes(prevRefeicoes => prevRefeicoes.filter(refeicao => refeicao.id !== id));
+                })
+                .catch(error => console.error('Erro ao excluir refeição:', error));
+        }
+    };
+
+    const getHoraRefeicao = (data, tipo) => {
+        const diaSemana = new Date(data).getDay();
+        if (tipo === 'almoco') {
+            return '13h30';
+        } else if (tipo === 'jantar') {
+            return diaSemana === 0 ? '20h30' : '20h00'; // 0 representa Domingo
+        }
+        return '';
+    };
+
+    const organizarPorDiaDaSemana = (refeicoes) => {
+        const hoje = new Date();
+        const diasFuturos = Array.from({ length: 7 }, (_, i) => {
+            const dia = new Date(hoje);
+            dia.setDate(hoje.getDate() + i);
+            return dia;
+        });
+
+        const refeicoesOrganizadas = diasFuturos.map(dia => ({
+            dia,
+            refeicoes: refeicoes.filter(refeicao => {
+                const dataRefeicao = new Date(refeicao.data);
+                return dataRefeicao.toDateString() === dia.toDateString();
+            })
+        }));
+
+        return refeicoesOrganizadas;
+    };
+
+    const capitalizeFirstLetter = (string) => {
+        return string.split(' ').map(word => {
+            if (word.toLowerCase() === 'de') {
+                return word.toLowerCase();
+            }
+            return word.charAt(0).toUpperCase() + word.slice(1);
+        }).join(' ');
+    };
+
+    const formatarData = (data) => {
+        const formatoData = { weekday: 'long', day: 'numeric', month: 'long' };
+        const dataFormatada = new Date(data).toLocaleDateString('pt-PT', formatoData);
+        return capitalizeFirstLetter(dataFormatada);
+    };
+
+    const refeicoesOrganizadas = organizarPorDiaDaSemana(refeicoes);
+
+    return (
+        <div className="inscritos-container">
+            <h4>Lista de Inscritos para Refeições para {semana}</h4>
+            {refeicoesOrganizadas.map((dia, index) => (
+                <div key={index}>
+                    <h5>{formatarData(dia.dia)}</h5>
+                    <div className="refeicao-tipo almoco">
+                        <h6>Almoço: 13h30</h6>
+                        <ul>
+                            {dia.refeicoes.filter(refeicao => !refeicao.almoco_mais_cedo && !refeicao.almoco_mais_tarde && !refeicao.levar_refeicao)
+                                .sort((a, b) => a.nome_completo.localeCompare(b.nome_completo))
+                                .map((refeicao, i) => (
+                                    <li key={i}>
+                                        {refeicao.nome_completo}
+                                        <button onClick={() => handleDelete(refeicao.id, refeicao.data)}>Não vem</button>
+                                    </li>
+                                ))}
+                        </ul>
+                        <p>Total de inscritos: {dia.refeicoes.filter(refeicao => !refeicao.almoco_mais_cedo && !refeicao.almoco_mais_tarde && !refeicao.levar_refeicao).length}</p>
+                    </div>
+                    <div className="refeicao-tipo almoco-mais-cedo">
+                        <h6>Almoço Mais Cedo</h6>
+                        <ul>
+                            {dia.refeicoes.filter(refeicao => refeicao.almoco_mais_cedo)
+                                .sort((a, b) => a.nome_completo.localeCompare(b.nome_completo))
+                                .map((refeicao, i) => (
+                                    <li key={i}>
+                                        {refeicao.nome_completo}
+                                        <button onClick={() => handleDelete(refeicao.id, refeicao.data)}>Não vem</button>
+                                    </li>
+                                ))}
+                        </ul>
+                        <p>Total de inscritos: {dia.refeicoes.filter(refeicao => refeicao.almoco_mais_cedo).length}</p>
+                    </div>
+                    <div className="refeicao-tipo almoco-mais-tarde">
+                        <h6>Almoço Mais Tarde</h6>
+                        <ul>
+                            {dia.refeicoes.filter(refeicao => refeicao.almoco_mais_tarde)
+                                .sort((a, b) => a.nome_completo.localeCompare(b.nome_completo))
+                                .map((refeicao, i) => (
+                                    <li key={i}>
+                                        {refeicao.nome_completo}
+                                        <button onClick={() => handleDelete(refeicao.id, refeicao.data)}>Não vem</button>
+                                    </li>
+                                ))}
+                        </ul>
+                        <p>Total de inscritos: {dia.refeicoes.filter(refeicao => refeicao.almoco_mais_tarde).length}</p>
+                    </div>
+                    <div className="refeicao-tipo jantar">
+                        <h6>Jantar: {getHoraRefeicao(dia.dia, 'jantar')}</h6>
+                        <ul>
+                            {dia.refeicoes.filter(refeicao => !refeicao.jantar_mais_cedo && !refeicao.jantar_mais_tarde && !refeicao.levar_refeicao)
+                                .sort((a, b) => a.nome_completo.localeCompare(b.nome_completo))
+                                .map((refeicao, i) => (
+                                    <li key={i}>
+                                        {refeicao.nome_completo}
+                                        <button onClick={() => handleDelete(refeicao.id, refeicao.data)}>Não vem</button>
+                                    </li>
+                                ))}
+                        </ul>
+                        <p>Total de inscritos: {dia.refeicoes.filter(refeicao => !refeicao.jantar_mais_cedo && !refeicao.jantar_mais_tarde && !refeicao.levar_refeicao).length}</p>
+                    </div>
+                    <div className="refeicao-tipo jantar-mais-cedo">
+                        <h6>Jantar Mais Cedo</h6>
+                        <ul>
+                            {dia.refeicoes.filter(refeicao => refeicao.jantar_mais_cedo)
+                                .sort((a, b) => a.nome_completo.localeCompare(b.nome_completo))
+                                .map((refeicao, i) => (
+                                    <li key={i}>
+                                        {refeicao.nome_completo}
+                                        <button onClick={() => handleDelete(refeicao.id, refeicao.data)}>Não vem</button>
+                                    </li>
+                                ))}
+                        </ul>
+                        <p>Total de inscritos: {dia.refeicoes.filter(refeicao => refeicao.jantar_mais_cedo).length}</p>
+                    </div>
+                    <div className="refeicao-tipo jantar-mais-tarde">
+                        <h6>Jantar Mais Tarde</h6>
+                        <ul>
+                            {dia.refeicoes.filter(refeicao => refeicao.jantar_mais_tarde)
+                                .sort((a, b) => a.nome_completo.localeCompare(b.nome_completo))
+                                .map((refeicao, i) => (
+                                    <li key={i}>
+                                        {refeicao.nome_completo}
+                                        <button onClick={() => handleDelete(refeicao.id, refeicao.data)}>Não vem</button>
+                                    </li>
+                                ))}
+                        </ul>
+                        <p>Total de inscritos: {dia.refeicoes.filter(refeicao => refeicao.jantar_mais_tarde).length}</p>
+                    </div>
+                    <div className="refeicao-tipo levar-refeicao">
+                        <h6>Levar Refeição</h6>
+                        <ul>
+                            {dia.refeicoes.filter(refeicao => refeicao.levar_refeicao)
+                                .sort((a, b) => a.nome_completo.localeCompare(b.nome_completo))
+                                .map((refeicao, i) => (
+                                    <li key={i}>
+                                        {refeicao.nome_completo}
+                                        <button onClick={() => handleDelete(refeicao.id, refeicao.data)}>Não vem</button>
+                                    </li>
+                                ))}
+                        </ul>
+                        <p>Total de inscritos: {dia.refeicoes.filter(refeicao => refeicao.levar_refeicao).length}</p>
+                    </div>
+                </div>
+            ))}
+            <div className="totais-container">
+                <h5>Totais de Inscritos</h5>
+                <p>Almoço: {totais.almoco || 0}</p>
+                <p>Almoço Mais Cedo: {totais.almoco_mais_cedo || 0}</p>
+                <p>Almoço Mais Tarde: {totais.almoco_mais_tarde || 0}</p>
+                <p>Jantar: {totais.jantar || 0}</p>
+                <p>Jantar Mais Cedo: {totais.jantar_mais_cedo || 0}</p>
+                <p>Jantar Mais Tarde: {totais.jantar_mais_tarde || 0}</p>
+                <p>Levar Refeição: {totais.levar_refeicao || 0}</p>
+            </div>
+            <Link to="/refeicoes" className="inscricao-link">Fazer inscrição</Link>
+        </div>
+    );
+};
+
+export default InscritosRefeicoes;
+
+
+
+
+div {
+    background-color: #fff;
+    padding: 20px;
+    margin: 20px auto;
+    border-radius: 8px;
+    max-width: 1200px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+
+###############$_COOK
+
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import '../../Styles/CalendarioRefeicoes.css'; // Importar o arquivo CSS
+
+const CalendarioRefeicoes = () => {
+    const [semana, setSemana] = useState([]);
+    const [nomes, setNomes] = useState([]); // Estado para armazenar os nomes
+    const [nomesAlmoco, setNomesAlmoco] = useState({}); // Estado para os nomes no almoço
+    const [nomesJantar, setNomesJantar] = useState({}); // Estado para os nomes no jantar
+    const [erro, setErro] = useState(''); // Estado para a mensagem de erro
+    const [levarRefeicao, setLevarRefeicao] = useState({}); // Estado para levar refeição
+    const [almoco, setAlmoco] = useState({}); // Estado para almoçar
+    const [almocoMaisCedo, setAlmocoMaisCedo] = useState({}); // Estado para almoçar mais cedo
+    const [almocoMaisTarde, setAlmocoMaisTarde] = useState({}); // Estado para almoçar mais tarde
+    const [jantar, setJantar] = useState({}); // Estado para jantar
+    const [jantarMaisCedo, setJantarMaisCedo] = useState({}); // Estado para jantar mais cedo
+    const [jantarMaisTarde, setJantarMaisTarde] = useState({}); // Estado para jantar mais tarde
+
+    const backendUrl = process.env.REACT_APP_BACKEND_URL;
+
+    useEffect(() => {
+        // Gerar um calendário de 12 dias começando hoje
+        const hoje = new Date();
+        const diasDoCalendario = Array.from({ length: 12 }, (_, i) => {
+            const dia = new Date(hoje);
+            dia.setDate(hoje.getDate() + i + 4);
+            return dia.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+        });
+        setSemana(diasDoCalendario);
+
+        // Buscar nomes do backend
+        axios.get(`${backendUrl}/components/nomes.php`)
+            .then(response => {
+                if (Array.isArray(response.data)) {
+                    setNomes(response.data);
+                } else {
+                    console.error('Erro: dados recebidos não são um array:', response.data);
+                }
+            })
+            .catch(error => console.error('Erro ao buscar nomes:', error));
+    }, [backendUrl]);
+
+    const handleInscricao = (data, tipo, nome) => {
+        if (!nome.trim()) return; // Ignorar nomes vazios
+
+        const payload = {
+            nomes_completos: [nome], // Enviar o nome atual na solicitação
+            data: data,
+            levar_refeicao: levarRefeicao[data] || false,
+            almoco: almoco[data] || false,
+            almoco_mais_cedo: almocoMaisCedo[data] || false,
+            almoco_mais_tarde: almocoMaisTarde[data] || false,
+            jantar: jantar[data] || false,
+            jantar_mais_cedo: jantarMaisCedo[data] || false,
+            jantar_mais_tarde: jantarMaisTarde[data] || false
+        };
+
+        axios.post(`${backendUrl}/components/refeicoes.php`, payload)
+            .then(response => {
+                if (response.data.message === "Já inscrito para esta refeição") {
+                    setErro(`O nome ${response.data.nome} já está inscrito para esta refeição.`);
+                } else {
+                    console.log(response.data);
+                    setErro(''); // Limpar mensagem de erro
+                    if (tipo.includes('almoco')) {
+                        setNomesAlmoco(prev => ({ ...prev, [data]: '' })); // Limpar o campo de nome do almoço
+                    } else {
+                        setNomesJantar(prev => ({ ...prev, [data]: '' })); // Limpar o campo de nome do jantar
+                    }
+                    // Limpar checkboxes
+                    setLevarRefeicao(prev => ({ ...prev, [data]: false }));
+                    setAlmoco(prev => ({ ...prev, [data]: false }));
+                    setAlmocoMaisCedo(prev => ({ ...prev, [data]: false }));
+                    setAlmocoMaisTarde(prev => ({ ...prev, [data]: false }));
+                    setJantar(prev => ({ ...prev, [data]: false }));
+                    setJantarMaisCedo(prev => ({ ...prev, [data]: false }));
+                    setJantarMaisTarde(prev => ({ ...prev, [data]: false }));
+                }
+            })
+            .catch(error => console.error('Erro ao inscrever-se:', error));
+    };
+
+    const handleNomeChange = (dia, tipo, value) => {
+        if (tipo.includes('almoco')) {
+            const newNomes = { ...nomesAlmoco };
+            newNomes[dia] = value;
+            setNomesAlmoco(newNomes);
+        } else {
+            const newNomes = { ...nomesJantar };
+            newNomes[dia] = value;
+            setNomesJantar(newNomes);
+        }
+    };
+
+    const handleCheckboxChange = (dia, tipo, value) => {
+        switch (tipo) {
+            case 'levarRefeicao':
+                setLevarRefeicao(prev => ({ ...prev, [dia]: value }));
+                break;
+            case 'almoco':
+                setAlmoco(prev => ({ ...prev, [dia]: value }));
+                break;
+            case 'almocoMaisCedo':
+                setAlmocoMaisCedo(prev => ({ ...prev, [dia]: value }));
+                break;
+            case 'almocoMaisTarde':
+                setAlmocoMaisTarde(prev => ({ ...prev, [dia]: value }));
+                break;
+            case 'jantar':
+                setJantar(prev => ({ ...prev, [dia]: value }));
+                break;
+            case 'jantarMaisCedo':
+                setJantarMaisCedo(prev => ({ ...prev, [dia]: value }));
+                break;
+            case 'jantarMaisTarde':
+                setJantarMaisTarde(prev => ({ ...prev, [dia]: value }));
+                break;
+            default:
+                break;
+        }
+    };
+
+    const capitalizeFirstLetter = (string) => {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    };
+
+    return (
+        <div className="calendario-container">
+            <h2>Calendário para as Refeições</h2>
+            {erro && <p className="erro">{erro}</p>}
+            <div className="calendario-semana">
+                {semana.map((dia, index) => (
+                    <div key={index} className="calendario-dia">
+                        <h3>
+                            {capitalizeFirstLetter(new Date(dia).toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }))}
+                        </h3>
+                        <div className="refeicao-container">
+                            <div className="nomeContainer">
+                                <select
+                                    value={nomesAlmoco[dia] || ''}
+                                    onChange={(e) => handleNomeChange(dia, 'almoco', e.target.value)}
+                                    onClick={() => document.querySelectorAll('.nomeContainer').forEach(el => el.classList.remove('active'))}
+                                    onFocus={(e) => e.target.parentElement.classList.add('active')}
+                                >
+                                    <option value="">Selecione um nome para o almoço</option>
+                                    {Array.isArray(nomes) && nomes.map((nome, index) => (
+                                        <option key={index} value={nome}>{nome}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <label className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={almoco[dia] || false}
+                                    onChange={(e) => handleCheckboxChange(dia, 'almoco', e.target.checked)}
+                                />
+                                Almoço
+                            </label>
+                            <label className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={almocoMaisCedo[dia] || false}
+                                    onChange={(e) => handleCheckboxChange(dia, 'almocoMaisCedo', e.target.checked)}
+                                />
+                                Almoçar Mais Cedo
+                            </label>
+                            <label className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={almocoMaisTarde[dia] || false}
+                                    onChange={(e) => handleCheckboxChange(dia, 'almocoMaisTarde', e.target.checked)}
+                                />
+                                Almoçar Mais Tarde
+                            </label>
+                            <label className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={levarRefeicao[dia] || false}
+                                    onChange={(e) => handleCheckboxChange(dia, 'levarRefeicao', e.target.checked)}
+                                />
+                                Takeaway
+                            </label>
+                        </div>
+                        <button onClick={() => handleInscricao(dia, 'almoco', nomesAlmoco[dia] || '')}>Inscrever</button>
+                        <div className="refeicao-container">
+                            <div className="nomeContainer">
+                                <select
+                                    value={nomesJantar[dia] || ''}
+                                    onChange={(e) => handleNomeChange(dia, 'jantar', e.target.value)}
+                                    onClick={() => document.querySelectorAll('.nomeContainer').forEach(el => el.classList.remove('active'))}
+                                    onFocus={(e) => e.target.parentElement.classList.add('active')}
+                                >
+                                    <option value="">Selecione um nome para o jantar</option>
+                                    {Array.isArray(nomes) && nomes.map((nome, index) => (
+                                        <option key={index} value={nome}>{nome}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <label className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={jantar[dia] || false}
+                                    onChange={(e) => handleCheckboxChange(dia, 'jantar', e.target.checked)}
+                                />
+                                Jantar
+                            </label>
+                            <label className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={jantarMaisCedo[dia] || false}
+                                    onChange={(e) => handleCheckboxChange(dia, 'jantarMaisCedo', e.target.checked)}
+                                />
+                                Jantar Mais Cedo
+                            </label>
+                            <label className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={jantarMaisTarde[dia] || false}
+                                    onChange={(e) => handleCheckboxChange(dia, 'jantarMaisTarde', e.target.checked)}
+                                />
+                                Jantar Mais Tarde
+                            </label>
+                        </div>
+                        <button onClick={() => handleInscricao(dia, 'jantar', nomesJantar[dia] || '')}>Inscrever</button>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+export default CalendarioRefeicoes;
