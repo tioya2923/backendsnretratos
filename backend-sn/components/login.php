@@ -13,10 +13,6 @@ if (!isset($_POST['email']) || !isset($_POST['password'])) {
     exit();
 }
 
-$email = $_POST['email'];
-$password = $_POST['password'];
-
-
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     echo json_encode(["message" => "Por favor, insira um email válido"]);
     exit();
@@ -38,8 +34,16 @@ if ($result->num_rows > 0) {
             $_SESSION['user_id'] = $row['id'];
             $_SESSION['user_name'] = $row['name'];
             
-            // Em vez de redirecionar, retorne uma resposta de sucesso
-            echo json_encode(["message" => "Login bem-sucedido"]);
+            // Gerar um token de autenticação
+            $token = bin2hex(random_bytes(16));
+            
+            // Armazenar o token no banco de dados
+            $update_stmt = $conn->prepare("UPDATE usuarios SET token = ? WHERE id = ?");
+            $update_stmt->bind_param("si", $token, $row['id']);
+            $update_stmt->execute();
+            
+            // Retornar uma resposta de sucesso com o token
+            echo json_encode(["message" => "Login bem-sucedido", "name" => $row['name'], "token" => $token]);
         } else {
             echo json_encode(["message" => "A sua conta ainda não foi aprovada pelo administrador."]);
         }

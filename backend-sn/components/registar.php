@@ -2,10 +2,8 @@
 
 ini_set('display_errors', 1); // Desativa a exibição de erros
 
-
 function handleUncaughtException($e) {
     error_log($e->getMessage()); // Loga o erro
-    //exit('Erro: ' . $e->getMessage());
     exit('Olá! Estaremos juntos brevemente!'); // Mensagem amigável para o usuário
 }
 
@@ -14,7 +12,7 @@ set_exception_handler('handleUncaughtException'); // Define o manipulador de exc
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
 require_once '../vendor/autoload.php';
- 
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -42,11 +40,7 @@ if ($stmt = $conn->prepare($sql)) {
 }
 
 $approvalCode = bin2hex(random_bytes(16));
-
 $approvalUrl = "https://backend-sn-a37ffec6bc3e.herokuapp.com/components/linkAprovacao.php?code=$approvalCode";
-
-
-
 
 $adminEmail = 'retratospsn@gmail.com';
 $sql = "INSERT INTO usuarios (name, email, password, status, approval_code) VALUES (?, ?, ?, 'pendente', ?)";
@@ -70,11 +64,7 @@ if ($stmt = $conn->prepare($sql)) {
                 $mail->isHTML(true);
                 $mail->Subject = 'Novo registro';
                 $mail->Body = "O usuário $name se registrou. <br><a href='$approvalUrl'>Aprovar?</a><br>";
-                //$mail->Body    = "O usuário $name se registrou. Aprovar? <a href='$approvalUrl'>$approvalUrl</a>";
                 $mail->AltBody = "O usuário $name se registrou. Aprovar? $approvalUrl";
-
-                
-
 
                 $mail->send();
                 echo 'Registo feito com sucesso. Aguarde pela aprovação do Administrador.';
