@@ -73,11 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && !isset($_GET['nomes'])) {
     $result = $conn->query($sql);
     $refeicoes = [];
     while ($row = $result->fetch_assoc()) {
-        // Garantir que os valores booleanos sejam corretamente interpretados
-        $row['levar_refeicao'] = (bool)$row['levar_refeicao'];
-        $row['almoco'] = (bool)$row['almoco'];
+        // Garantir que os valores booleanos sejam corretamente interpretados       
+        $row['almoco'] = (bool)$row['almoco'];       
         $row['almoco_mais_cedo'] = (bool)$row['almoco_mais_cedo'];
         $row['almoco_mais_tarde'] = (bool)$row['almoco_mais_tarde'];
+        $row['levar_refeicao'] = (bool)$row['levar_refeicao'];
         $row['jantar'] = (bool)$row['jantar'];
         $row['jantar_mais_cedo'] = (bool)$row['jantar_mais_cedo'];
         $row['jantar_mais_tarde'] = (bool)$row['jantar_mais_tarde'];
