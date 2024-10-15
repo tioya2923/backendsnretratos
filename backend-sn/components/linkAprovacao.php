@@ -8,8 +8,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 // Função para enviar email
-function sendEmail($userEmail, $userName, $subject, $body)
-{
+function sendEmail($userEmail, $userName, $subject, $body) {
     $mail = new PHPMailer(true);
     try {
         $mail->isSMTP();
@@ -32,17 +31,16 @@ function sendEmail($userEmail, $userName, $subject, $body)
 }
 
 // Função para agendar emails
-function scheduleEmails($dayOfWeek, $hour, $minute, $subject, $body)
-{
+function scheduleEmails($dayOfWeek, $hour, $minute, $subject, $body) {
     $conn = new mysqli('host', 'username', 'password', 'database');
     $sql = "SELECT * FROM usuarios WHERE status = 'aprovado'";
     if ($stmt = $conn->prepare($sql)) {
         if ($stmt->execute()) {
             $result = $stmt->get_result();
             while ($user = $result->fetch_assoc()) {
-                // Enviar email no horário agendado
-                $currentTime = new DateTime();
-                $scheduledTime = new DateTime();
+                // Enviar email no horário agendado (Portugal Continental)
+                $currentTime = new DateTime('now', new DateTimeZone('Europe/Lisbon'));
+                $scheduledTime = new DateTime('now', new DateTimeZone('Europe/Lisbon'));
                 $scheduledTime->setTime($hour, $minute);
                 $scheduledTime->modify($dayOfWeek);
                 if ($currentTime < $scheduledTime) {
@@ -55,16 +53,16 @@ function scheduleEmails($dayOfWeek, $hour, $minute, $subject, $body)
     $conn->close();
 }
 
-// Agendar emails para segunda-feira às 08:00
-scheduleEmails('next Tuesday', 23, 20, 'Lembrete de Inscrição', "<p>Bom dia!</p>
-        <p style='font-size: larger; font-weight: bold;'>Relembramos-te que tem que fazer a <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/login'>inscrição para as refeições</a>.</p>
+// Agendar emails para segunda-feira às 08:00 (Portugal Continental)
+scheduleEmails('next Tuesday', 23, 27, 'Lembrete de Inscrição', "<p>Bom dia, 'nome do usuário'!</p>
+        <p style='font-size: larger; font-weight: bold;'>Relembramos-te que tem que fazer a inscrição para as refeições.</p>
         <p>Que, por intercessão de São Nicolau, Deus abençoe a sua semana!</p>
         <p style='margin-top: 20px; font-size: smaller; font-style: italic;'>Se já fez a inscrição ignore este email.</p>");
 
-// Agendar emails para quinta-feira às 21:00
-scheduleEmails('next Thursday', 21, 0, 'Última Chamada para Inscrição', "<p>Boa noite!</p> 
- <p style='font-size: larger; font-weight: bold;'>Se ainda não te inscreveste para as refeições <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/login'>faça-o agora mesmo</a>.</p> 
-  <p style='margin-top: 20px; font-size: smaller; font-style: italic;'>Se já fez a inscrição ignore este email.</p>");
+// Agendar emails para quinta-feira às 21:00 (Portugal Continental)
+scheduleEmails('next Thursday', 21, 0, 'Última Chamada para Inscrição', "<p>Boa noite, 'nome do usuário'!</p>
+        <p style='font-size: larger; font-weight: bold;'>Se ainda não te inscreveste para as refeições faça-o agora mesmo.</p>
+        <p style='margin-top: 20px; font-size: smaller; font-style: italic;'>Se já fez a inscrição ignore este email.</p>");
 
 // Código de aprovação
 $approvalCode = filter_input(INPUT_GET, "code", FILTER_SANITIZE_ADD_SLASHES);
