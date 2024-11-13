@@ -5,7 +5,8 @@ require_once 'cors.php';
 
 
 
-$clearDbUrl = getenv('CLEARDB_DATABASE_URL') ?: 'mysql://bca7e15601a779:338412bf@us-cluster-east-01.k8s.cleardb.net/heroku_0a25a194d779a89';
+//$clearDbUrl = getenv('CLEARDB_DATABASE_URL') ?: 'mysql://bca7e15601a779:338412bf@us-cluster-east-01.k8s.cleardb.net/heroku_0a25a194d779a89';
+$clearDbUrl = getenv('JAWSDB_URL') ?: 'mysql://cb742fpvh4agjcj7:ma77khr7472rrrmr@g8r9w9tmspbwmsyo.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/ib3k11kv55bbtp9q';
                                            
 
 // Parse the URL and extract the connection details
