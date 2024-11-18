@@ -1,5 +1,7 @@
 <?php
 
+date_default_timezone_set('Europe/Lisbon'); // Definir o fuso horário para Portugal Continental
+
 require_once '../connect/server.php';
 require_once '../vendor/autoload.php';
 
@@ -47,7 +49,7 @@ $dayOfWeek = date('N');
 $hour = date('G');
 $minute = date('i');
 
-if ($dayOfWeek == 1 && $hour == 21 && $minute == 5) {
+if ($dayOfWeek == 1 && $hour == 10 && $minute == 0) {
     $subject = "Bom dia!";
     $body = "<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p>
     <p>Passo apenas para lhe fazer lembrar o seguinte: <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>INSCREVA-TE PARA AS REFEIÇÕES.</a></p>";
