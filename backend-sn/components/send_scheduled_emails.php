@@ -51,13 +51,16 @@ while (true) {
     $currentMinute = date('i');
 
     if ($currentDayOfWeek == 1 && $currentHour == 23 && $currentMinute == 15) {
+        file_get_contents('https://backend-sn-a37ffec6bc3e.herokuapp.com/components/send_scheduled_emails.php');
         $subject = "Bom dia!";
         $body = "<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p>
                  <p>Passo apenas para lhe fazer lembrar o seguinte: <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>INSCREVA-TE PARA AS REFEIÇÕES.</a></p>";
         sendEmail($subject, $body, $emails);
+        
     }
 
     if ($currentDayOfWeek == 4 && $currentHour == 21 && $currentMinute == 0) {
+        file_get_contents('https://backend-sn-a37ffec6bc3e.herokuapp.com/components/send_scheduled_emails.php');
         $subject = "Boa noite!";
         $body = "<p>Olá, boa noite! Como está a decorrer a tua semana laboral?</p>
                  <p>Se ainda não te inscreveste para as refeições <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>faça-o agora mesmo.</a></p>";
@@ -65,6 +68,7 @@ while (true) {
     }
 
     if ($currentDayOfWeek == 6 && $currentHour == 14 && $currentMinute == 30) {
+        file_get_contents('https://backend-sn-a37ffec6bc3e.herokuapp.com/components/send_scheduled_emails.php');
         $subject = "Boa tarde!";
         $body = "<p>Olá, boa tarde!</p>
                  <p>Aproveite o final de semana para <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>fazer a inscrição</a> para as refeições.</p>";
