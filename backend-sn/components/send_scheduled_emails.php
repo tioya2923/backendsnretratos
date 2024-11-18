@@ -50,7 +50,7 @@ while (true) {
     $currentHour = date('G');
     $currentMinute = date('i');
 
-    if ($currentDayOfWeek == 1 && $currentHour == 23 && $currentMinute == 15) {
+    if ($currentDayOfWeek == 1 && $currentHour == 23 && $currentMinute == 30) {
         file_get_contents('https://backend-sn-a37ffec6bc3e.herokuapp.com/components/send_scheduled_emails.php');
         $subject = "Bom dia!";
         $body = "<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p>
