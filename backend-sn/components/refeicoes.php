@@ -1,5 +1,17 @@
 <?php
 
+
+session_start();
+
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header('Location: login.php');
+    exit;
+}
+
+// O restante do código da página de inscrição
+
+
+
 ini_set('display_errors', 1); // Ativa a exibição de erros para depuração
 
 function handleUncaughtException($e) {

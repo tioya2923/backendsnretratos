@@ -58,7 +58,7 @@ if ($stmt = $conn->prepare($sql)) {
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
                 $mail->Port = 465;
 
-                $mail->setFrom('retratospsn@gmail.com', 'Administrador');
+                $mail->setFrom('retratospsn@gmail.com', utf8_decode('Paróquia de São Nicolau'));
                 $mail->addAddress($adminEmail);
 
                 $mail->isHTML(true);
