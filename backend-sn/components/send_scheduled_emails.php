@@ -45,30 +45,35 @@ if ($result->num_rows > 0) {
     }
 }
 
-$dayOfWeek = date('N');
-$hour = date('G');
-$minute = date('i');
+while (true) {
+    $currentDayOfWeek = date('N');
+    $currentHour = date('G');
+    $currentMinute = date('i');
 
-if ($dayOfWeek == 1 && $hour == 9 && $minute == 00) {
-    $subject = "Bom dia!";
-    $body = "<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p>
-    <p>Passo apenas para lhe fazer lembrar o seguinte: <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>INSCREVA-TE PARA AS REFEIÇÕES.</a></p>";
-    sendEmail($subject, $body, $emails);
+    if ($currentDayOfWeek == 1 && $currentHour == 23 && $currentMinute == 15) {
+        $subject = "Bom dia!";
+        $body = "<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p>
+                 <p>Passo apenas para lhe fazer lembrar o seguinte: <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>INSCREVA-TE PARA AS REFEIÇÕES.</a></p>";
+        sendEmail($subject, $body, $emails);
+    }
+
+    if ($currentDayOfWeek == 4 && $currentHour == 21 && $currentMinute == 0) {
+        $subject = "Boa noite!";
+        $body = "<p>Olá, boa noite! Como está a decorrer a tua semana laboral?</p>
+                 <p>Se ainda não te inscreveste para as refeições <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>faça-o agora mesmo.</a></p>";
+        sendEmail($subject, $body, $emails);
+    }
+
+    if ($currentDayOfWeek == 6 && $currentHour == 14 && $currentMinute == 30) {
+        $subject = "Boa tarde!";
+        $body = "<p>Olá, boa tarde!</p>
+                 <p>Aproveite o final de semana para <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>fazer a inscrição</a> para as refeições.</p>";
+        sendEmail($subject, $body, $emails);
+    }
+
+    // Esperar por 60 segundos antes de verificar novamente
+    sleep(60);
 }
 
-if ($dayOfWeek == 4 && $hour == 21 && $minute == 0) {
-    $subject = "Boa noite!";
-    $body = "<p>Olá, boa noite! Como está a decorrer a tua semana laboral?</p>
-    <p>Se ainda não te inscreveste para as refeições <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>faça-o agora mesmo.</a></p>";
-    sendEmail($subject, $body, $emails);
-}
 
-if ($dayOfWeek == 6 && $hour == 14 && $minute == 30) {
-    $subject = "Boa tarde!";
-    $body = "<p>Olá, boa tarde!</p>
-    <p>Aproveite o final de semana para <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>fazer a inscrição</a> para as refeições.</p>";
-    sendEmail($subject, $body, $emails);
-}
-
-$conn->close();
 ?>
