@@ -31,8 +31,10 @@ function sendEmail($subject, $body, $recipients) {
         $mail->AltBody = strip_tags($body);
 
         $mail->send();
+        echo "Email enviado com sucesso para todos os destinatários.\n";
     } catch (Exception $e) {
         error_log($e->getMessage());
+        echo "Erro ao enviar email: " . $e->getMessage() . "\n";
     }
 }
 
@@ -44,6 +46,9 @@ if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $emails[] = $row['email'];
     }
+    echo "Emails carregados com sucesso.\n";
+} else {
+    echo "Nenhum email encontrado.\n";
 }
 
 while (true) {
@@ -51,10 +56,12 @@ while (true) {
     $currentHour = date('G');
     $currentMinute = date('i');
     $currentTime = date('H:i');
+
+    echo "Verificando emails a serem enviados. Data e Hora atuais: " . date('Y-m-d H:i:s') . "\n";
     
     // Definir os horários para envio dos emails
     $timesToCheck = [
-        '2-00:55' => ['subject' => 'Bom dia!', 'body' => '<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p><p>Passo apenas para lhe fazer lembrar o seguinte: INSCREVA-TE PARA AS REFEIÇÕES.</p> <p>São Nicolau agradece!</p>'],
+        '2-01:00' => ['subject' => 'Bom dia!', 'body' => '<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p><p>Passo apenas para lhe fazer lembrar o seguinte: INSCREVA-TE PARA AS REFEIÇÕES.</p> <p>São Nicolau agradece!</p>'],
         '4-21:00' => ['subject' => 'Boa noite!', 'body' => '<p>Olá, boa noite! Como está a decorrer a tua semana laboral?</p><p>Se ainda não fez a inscrição para as refeições, faça-o agora mesmo.</a></p> <p>São Nicolau agradece!</p>'],
         '6-14:30' => ['subject' => 'Boa tarde!', 'body' => '<p>Olá, boa tarde!</p><p>Aproveite o final de semana para fazer a inscrição para as refeições.</p> <p>São Nicolau agradece!</p>']
     ];
@@ -71,5 +78,5 @@ while (true) {
     sleep(60);
 }
 
-
+$conn->close();
 ?>
