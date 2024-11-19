@@ -9,6 +9,20 @@ require_once '../vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+// Carregar emails dos usuários
+$sql = "SELECT email FROM usuarios";
+$result = $conn->query($sql);
+$emails = [];
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $emails[] = $row['email'];
+    }
+    echo "Emails carregados com sucesso.\n";
+} else {
+    echo "Nenhum email encontrado.\n";
+}
+
+// Função para enviar emails
 function sendEmail($subject, $body, $recipients) {
     $mail = new PHPMailer(true);
     try {
@@ -39,19 +53,7 @@ function sendEmail($subject, $body, $recipients) {
     }
 }
 
-// Carregar emails dos usuários
-$sql = "SELECT email FROM usuarios";
-$result = $conn->query($sql);
-$emails = [];
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $emails[] = $row['email'];
-    }
-    echo "Emails carregados com sucesso.\n";
-} else {
-    echo "Nenhum email encontrado.\n";
-}
-
+// Agendamento de envio de emails
 while (true) {
     $currentDayOfWeek = date('N');
     $currentTime = date('H:i');
@@ -62,7 +64,7 @@ while (true) {
     
     // Definir os horários para envio dos emails
     $timesToCheck = [
-        '2-18:40' => ['subject' => 'Bom dia!', 'body' => '<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p><p>Passo apenas para lhe fazer lembrar o seguinte: INSCREVA-TE PARA AS REFEIÇÕES.</p> <p>São Nicolau agradece!</p>'],
+        '2-18:50' => ['subject' => 'Bom dia!', 'body' => '<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p><p>Passo apenas para lhe fazer lembrar o seguinte: INSCREVA-TE PARA AS REFEIÇÕES.</p> <p>São Nicolau agradece!</p>'],
         '4-21:00' => ['subject' => 'Boa noite!', 'body' => '<p>Olá, boa noite! Como está a decorrer a tua semana laboral?</p><p>Se ainda não fez a inscrição para as refeições, faça-o agora mesmo.</p> <p>São Nicolau agradece!</p>'],
         '6-14:30' => ['subject' => 'Boa tarde!', 'body' => '<p>Olá, boa tarde!</p><p>Aproveite o final de semana para fazer a inscrição para as refeições.</p> <p>São Nicolau agradece!</p>']
     ];
