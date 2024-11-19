@@ -36,6 +36,7 @@ function sendEmail($subject, $body, $recipients) {
     }
 }
 
+// Carregar emails dos usuários
 $sql = "SELECT email FROM usuarios";
 $result = $conn->query($sql);
 $emails = [];
@@ -49,31 +50,25 @@ while (true) {
     $currentDayOfWeek = date('N');
     $currentHour = date('G');
     $currentMinute = date('i');
+    $currentTime = date('H:i');
+    
+    // Definir os horários para envio dos emails
+    $timesToCheck = [
+        '2-00:55' => ['subject' => 'Bom dia!', 'body' => '<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p><p>Passo apenas para lhe fazer lembrar o seguinte: INSCREVA-TE PARA AS REFEIÇÕES.</p> <p>São Nicolau agradece!</p>'],
+        '4-21:00' => ['subject' => 'Boa noite!', 'body' => '<p>Olá, boa noite! Como está a decorrer a tua semana laboral?</p><p>Se ainda não fez a inscrição para as refeições, faça-o agora mesmo.</a></p> <p>São Nicolau agradece!</p>'],
+        '6-14:30' => ['subject' => 'Boa tarde!', 'body' => '<p>Olá, boa tarde!</p><p>Aproveite o final de semana para fazer a inscrição para as refeições.</p> <p>São Nicolau agradece!</p>']
+    ];
 
-    if ($currentDayOfWeek == 1 && $currentHour == 23 && $currentMinute == 40) {
-        $subject = "Bom dia!";
-        $body = "<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p>
-                 <p>Passo apenas para lhe fazer lembrar o seguinte: <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>INSCREVA-TE PARA AS REFEIÇÕES.</a></p>";
-        sendEmail($subject, $body, $emails);
-    }
-
-    if ($currentDayOfWeek == 4 && $currentHour == 21 && $currentMinute == 0) {
-        $subject = "Boa noite!";
-        $body = "<p>Olá, boa noite! Como está a decorrer a tua semana laboral?</p>
-                 <p>Se ainda não te inscreveste para as refeições <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>faça-o agora mesmo.</a></p>";
-        sendEmail($subject, $body, $emails);
-    }
-
-    if ($currentDayOfWeek == 6 && $currentHour == 14 && $currentMinute == 30) {
-        $subject = "Boa tarde!";
-        $body = "<p>Olá, boa tarde!</p>
-                 <p>Aproveite o final de semana para <a href='https://frontend-sn-e0e8d7df269a.herokuapp.com/refeicoes'>fazer a inscrição</a> para as refeições.</p>";
-        sendEmail($subject, $body, $emails);
+    // Verificar se é o horário de envio de email
+    foreach ($timesToCheck as $dayTime => $emailData) {
+        list($day, $time) = explode('-', $dayTime);
+        if ($currentDayOfWeek == $day && $currentTime == $time) {
+            sendEmail($emailData['subject'], $emailData['body'], $emails);
+        }
     }
 
     // Esperar por 60 segundos antes de verificar novamente
     sleep(60);
-   
 }
 
 
