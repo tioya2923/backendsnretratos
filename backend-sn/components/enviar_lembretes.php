@@ -62,11 +62,11 @@ echo "Dia atual: $currentDayOfWeek\n";
 echo "Hora atual: $currentTime\n";
 
 // Definir os horários para envio dos emails
-$timesToCheck = [
-    '3-17:45' => ['subject' => 'Bom tarde!', 'body' => '<p>Olá, Boa tarde! </p><p>Já fez a inscrição para as refeições?</p> <p>São Nicolau agradece!</p>'],
-    '1-09:00' => ['subject' => 'Bom dia!', 'body' => '<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p><p>Passo apenas para lhe fazer lembrar o seguinte: INSCREVA-TE PARA AS REFEIÇÕES.</p> <p>São Nicolau agradece!</p>'],
-    '4-21:30' => ['subject' => 'Boa noite!', 'body' => '<p>Olá, boa noite! Como está a decorrer a tua semana laboral?</p><p>Se ainda não fez a inscrição para as refeições, faça-o agora mesmo.</p> <p>São Nicolau agradece!</p>'],
-    '6-14:30' => ['subject' => 'Boa tarde!', 'body' => '<p>Olá, boa tarde!</p><p>Aproveite o final de semana para fazer a inscrição para as refeições.</p> <p>São Nicolau agradece!</p>']
+$timesToCheck = [    
+    '2-09:00' => ['subject' => 'Bom dia!', 'body' => '<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p><p>Passo apenas para lhe fazer lembrar o seguinte: INSCREVA-TE PARA AS REFEIÇÕES.</p> <p>São Nicolau agradece!</p>'],
+    '4-18:00' => ['subject' => 'Bom tarde!', 'body' => '<p>Olá, Boa tarde! </p><p>Já fez a inscrição para as refeições?</p> <p>São Nicolau agradece!</p>'],
+    '5-21:30' => ['subject' => 'Boa noite!', 'body' => '<p>Olá, boa noite! Como está a decorrer a tua semana laboral?</p><p>Se ainda não fez a inscrição para as refeições, faça-o agora mesmo.</p> <p>São Nicolau agradece!</p>'],
+    '7-14:30' => ['subject' => 'Boa tarde!', 'body' => '<p>Olá, boa tarde!</p><p>Aproveite o final de semana para fazer a inscrição para as refeições.</p> <p>São Nicolau agradece!</p>']
 ];
 
 // Verificar se é o horário de envio de email
