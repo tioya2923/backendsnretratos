@@ -54,32 +54,28 @@ function sendEmail($subject, $body, $recipients) {
 }
 
 // Agendamento de envio de emails
-while (true) {
-    $currentDayOfWeek = date('N');
-    $currentTime = date('H:i');
+$currentDayOfWeek = date('N');
+$currentTime = date('H:i');
 
-    echo "Verificando emails a serem enviados. Data e Hora atuais: " . date('Y-m-d H:i:s') . "\n";
-    echo "Dia atual: $currentDayOfWeek\n";
-    echo "Hora atual: $currentTime\n";
-    
-    // Definir os horários para envio dos emails
-    $timesToCheck = [
-        '2-18:50' => ['subject' => 'Bom dia!', 'body' => '<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p><p>Passo apenas para lhe fazer lembrar o seguinte: INSCREVA-TE PARA AS REFEIÇÕES.</p> <p>São Nicolau agradece!</p>'],
-        '4-21:00' => ['subject' => 'Boa noite!', 'body' => '<p>Olá, boa noite! Como está a decorrer a tua semana laboral?</p><p>Se ainda não fez a inscrição para as refeições, faça-o agora mesmo.</p> <p>São Nicolau agradece!</p>'],
-        '6-14:30' => ['subject' => 'Boa tarde!', 'body' => '<p>Olá, boa tarde!</p><p>Aproveite o final de semana para fazer a inscrição para as refeições.</p> <p>São Nicolau agradece!</p>']
-    ];
+echo "Verificando emails a serem enviados. Data e Hora atuais: " . date('Y-m-d H:i:s') . "\n";
+echo "Dia atual: $currentDayOfWeek\n";
+echo "Hora atual: $currentTime\n";
 
-    // Verificar se é o horário de envio de email
-    foreach ($timesToCheck as $dayTime => $emailData) {
-        list($day, $time) = explode('-', $dayTime);
-        if ($currentDayOfWeek == $day && $currentTime == $time) {
-            echo "Enviando email para: $currentTime\n";
-            sendEmail($emailData['subject'], $emailData['body'], $emails);
-        }
+// Definir os horários para envio dos emails
+$timesToCheck = [
+    '3-17:45' => ['subject' => 'Bom tarde!', 'body' => '<p>Olá, Boa tarde! </p><p>Já fez a inscrição para as refeições?</p> <p>São Nicolau agradece!</p>'],
+    '1-09:00' => ['subject' => 'Bom dia!', 'body' => '<p>Olá, Bom dia! Preparado para mais uma semana laboral?</p><p>Passo apenas para lhe fazer lembrar o seguinte: INSCREVA-TE PARA AS REFEIÇÕES.</p> <p>São Nicolau agradece!</p>'],
+    '4-21:30' => ['subject' => 'Boa noite!', 'body' => '<p>Olá, boa noite! Como está a decorrer a tua semana laboral?</p><p>Se ainda não fez a inscrição para as refeições, faça-o agora mesmo.</p> <p>São Nicolau agradece!</p>'],
+    '6-14:30' => ['subject' => 'Boa tarde!', 'body' => '<p>Olá, boa tarde!</p><p>Aproveite o final de semana para fazer a inscrição para as refeições.</p> <p>São Nicolau agradece!</p>']
+];
+
+// Verificar se é o horário de envio de email
+foreach ($timesToCheck as $dayTime => $emailData) {
+    list($day, $time) = explode('-', $dayTime);
+    if ($currentDayOfWeek == $day && $currentTime == $time) {
+        echo "Enviando email para: $currentTime\n";
+        sendEmail($emailData['subject'], $emailData['body'], $emails);
     }
-
-    // Esperar por 60 segundos antes de verificar novamente
-    sleep(60);
 }
 
 $conn->close();
