@@ -2,7 +2,7 @@
 
 $origensPermitidas = [
     'http://localhost:3000',
-    'https://frontend-sn-e0e8d7df269a.herokuapp.com'
+    'http://135.181.47.213/frontendsnretratos/'
     ];
 
 if (isset($_SERVER['HTTP_ORIGIN']) && in_array($_SERVER['HTTP_ORIGIN'], $origensPermitidas)) {
