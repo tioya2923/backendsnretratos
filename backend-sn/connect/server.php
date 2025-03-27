@@ -1,36 +1,41 @@
+require_once 'cors.php';
 <?php
-
 require_once 'cors.php';
 
-// Dados de conexão fornecidos
-$clearDbUrl = 'mysql://root:19101989Jodu!@135.181.47.213:3306/snrefeicoes';
+// Carregar URL de conexão de uma variável de ambiente
+$clearDbUrl = getenv('DB_URL');
 
-// Parse a URL e extrai os detalhes da conexão
+if (!$clearDbUrl) {
+    die("A variável de ambiente DB_URL não foi configurada.");
+}
+
+// Parse da URL e extração de detalhes
 $url = parse_url($clearDbUrl);
 
-// Verifique se todas as partes necessárias estão presentes
-if (!isset($url["host"]) || !isset($url["user"]) || !isset($url["pass"]) || !isset($url["path"])) {
+// Validação das partes da URL
+if (!isset($url["host"], $url["user"], $url["pass"], $url["path"])) {
     die("URL de conexão com o banco de dados está incompleta ou incorreta.");
 }
+
 $host = $url["host"];
 $user = $url["user"];
 $password = $url["pass"];
-$db = substr($url["path"], 1);
+$db = ltrim($url["path"], '/');
 
-// Definir as variáveis de conexão
+// Definir constantes de conexão
 define('DB_HOST', $host);
 define('DB_USER', $user);
 define('DB_PASSWORD', $password);
 define('DB_NAME', $db);
 
-// Conexão com a base de dados
+// Conexão segura ao banco de dados
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
 
-// Verificar a conexão
+// Verificar conexão
 if ($conn->connect_error) {
-    die("Conexão falhou: " . $conn->connect_error);
-} else {
-    echo "Conexão bem-sucedida!";
+    die("Erro ao conectar-se ao banco de dados: " . $conn->connect_error);
 }
 
+// Informar sucesso
+echo json_encode(['status' => 'Conexão bem-sucedida!']);
 ?>
