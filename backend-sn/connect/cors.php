@@ -3,7 +3,8 @@
 $origensPermitidas = [
     'http://snrefeicoes.pt',
     'http://www.snrefeicoes.pt',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'http://135.181.47.213'
 ];
 
 // Verifica se a origem da requisição está na lista de permitidas
