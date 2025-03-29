@@ -1,6 +1,6 @@
 <?php
 // Importar a biblioteca Dotenv
-require_once 'cors.php';
+require_once __DIR__ . '/cors.php'; // Caminho relativo ao diretório atual
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 #use Dotenv;
@@ -15,10 +15,10 @@ $dotenv->load();
 
 // Acessar a variável DB_URL
 //$dbUrl = getenv('DB_URL');
-//$dbUrl = $_ENV['DB_URL'];
+$dbUrl = $_ENV['DB_URL'];
 
-var_dump($_ENV['DB_URL']);
-var_dump(getenv('DB_URL'));
+//var_dump($_ENV['DB_URL']);
+//var_dump(getenv('DB_URL'));
 
 if (!$dbUrl) {
     die("A variável de ambiente DB_URL não foi carregada corretamente.");
