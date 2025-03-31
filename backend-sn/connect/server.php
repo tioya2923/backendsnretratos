@@ -1,19 +1,19 @@
 <?php
-require_once 'cors.php';
+require 'cors.php';
 require_once 'vendor/autoload.php';
 
 // Carrega as variáveis do arquivo .env
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
-// Recupera a variável DB_URL do .env
-$clearDbUrl = getenv('DB_URL');
-
-if (!$clearDbUrl) {
-    die(json_encode(['error' => 'A variável DB_URL não foi configurada.']));
+$dbUrl = getenv('DB_URL');
+if (!$dbUrl) {
+    die('A variável DB_URL não foi carregada.');
 }
+echo "DB_URL carregada: $dbUrl";
 
-$url = parse_url($clearDbUrl);
+
+$url = parse_url($dbUrl);
 
 if (!isset($url["host"], $url["user"], $url["pass"], $url["path"])) {
     die(json_encode(['error' => 'URL de conexão ao banco está incompleta.']));
