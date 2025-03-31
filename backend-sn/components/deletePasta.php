@@ -1,7 +1,8 @@
 <?php
-require '../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+//require_once '../vendor/autoload.php';
+require_once '../../vendor/autoload.php';
 
 $bucketName = 'retratos-paroquia-sao-nicolau';
 $IAM_KEY = getenv('AWS_ACCESS_KEY_ID');

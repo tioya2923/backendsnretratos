@@ -39,7 +39,7 @@ try {
     if ($conn->connect_error) {
         die(json_encode(['error' => 'Erro na conexão: ' . $conn->connect_error]));
     }
-    echo "Conexão ao banco de dados realizada com sucesso!";
+    
 } catch (Exception $e) {
     die(json_encode(['error' => 'Erro ao conectar: ' . $e->getMessage()]));
 }

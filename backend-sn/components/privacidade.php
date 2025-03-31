@@ -2,6 +2,7 @@
 session_start();
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+require_once '../../vendor/autoload.php';
 
 // Verifique se o email e a senha foram postados
 if(isset($_POST['email']) && isset($_POST['password'])) {

@@ -2,6 +2,7 @@
 session_start();
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+require_once '../../vendor/autoload.php';
 
 $name = $_POST['name']; // Adicione esta linha
 $email = $_POST['email'];

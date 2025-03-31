@@ -2,6 +2,7 @@
 
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+require_once '../../vendor/autoload.php';
 
 // Verificar a conexão
 if ($conn->connect_error) {
