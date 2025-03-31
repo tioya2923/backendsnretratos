@@ -1,9 +1,13 @@
 <?php
-require_once 'cors.php'; 
+require_once 'cors.php';
 require_once 'vendor/autoload.php';
 
-// Define a variável DB_URL diretamente
-$clearDbUrl = 'mysql://root:19101989Jodu!@135.181.47.213:3306/snrefeicoes';
+// Carrega as variáveis do arquivo .env
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
+// Recupera a variável DB_URL do .env
+$clearDbUrl = getenv('DB_URL');
 
 if (!$clearDbUrl) {
     die(json_encode(['error' => 'A variável DB_URL não foi configurada.']));
