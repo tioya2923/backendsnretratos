@@ -1,15 +1,9 @@
 <?php
-require_once __DIR__ . '/../cors.php'; 
-require_once __DIR__ . '/../../vendor/autoload.php';
+require_once 'cors.php'; 
+require_once 'vendor/autoload.php';
 
-try {
-    $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__, 3));
-    $dotenv->load();
-} catch (Dotenv\Exception\InvalidPathException $e) {
-    die(json_encode(['error' => 'O arquivo .env não foi encontrado.']));
-}
-
-$clearDbUrl = getenv('DB_URL');
+// Define a variável DB_URL diretamente
+$clearDbUrl = 'mysql://root:19101989Jodu!@135.181.47.213:3306/snrefeicoes';
 
 if (!$clearDbUrl) {
     die(json_encode(['error' => 'A variável DB_URL não foi configurada.']));

@@ -3,6 +3,10 @@
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
 
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 // Obter os dados do formulário
 $email = $_POST['email'];
 $password = $_POST['password'];
