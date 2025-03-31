@@ -1,18 +1,22 @@
 <?php
 require 'cors.php';
-require_once 'vendor/autoload.php';
+require '../../vendor/autoload.php';
 
-// Carrega as variáveis do arquivo .env
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+// Carregar o arquivo .env
+$dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__);
 $dotenv->load();
 
+// Recuperar a variável DB_URL do ambiente
 $dbUrl = getenv('DB_URL');
+
 if (!$dbUrl) {
-    die('A variável DB_URL não foi carregada.');
+    die(json_encode(['error' => 'A variável DB_URL não foi carregada.']));
 }
-echo "DB_URL carregada: $dbUrl";
 
+// Exibir a URL para depuração (opcional)
+//echo "Recuperar o ambiente: " . $dbUrl . "<br>";
 
+// Processar a URL de conexão ao banco de dados
 $url = parse_url($dbUrl);
 
 if (!isset($url["host"], $url["user"], $url["pass"], $url["path"])) {
@@ -24,6 +28,7 @@ $user = $url["user"];
 $password = $url["pass"];
 $db = ltrim($url["path"], '/');
 
+// Definir constantes para conexão ao banco de dados
 define('DB_HOST', $host);
 define('DB_USER', $user);
 define('DB_PASSWORD', $password);
@@ -34,7 +39,9 @@ try {
     if ($conn->connect_error) {
         die(json_encode(['error' => 'Erro na conexão: ' . $conn->connect_error]));
     }
+    echo "Conexão ao banco de dados realizada com sucesso!";
 } catch (Exception $e) {
     die(json_encode(['error' => 'Erro ao conectar: ' . $e->getMessage()]));
 }
+
 ?>
