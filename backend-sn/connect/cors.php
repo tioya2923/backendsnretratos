@@ -2,9 +2,9 @@
 // Lista de origens permitidas
 $origensPermitidas = [
     'https://snrefeicoes.pt',
-    'https://www.snrefeicoes.pt',
-    'http://localhost:3000',
-    'https://135.181.47.213'
+    'https://www.snrefeicoes.pt'
+    //'http://localhost:3000',
+   
 ];
 
 // Verifica se a origem da requisição está na lista de permitidas
