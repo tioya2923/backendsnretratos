@@ -69,7 +69,7 @@ function enviarLembretes()
                 echo "E-mail enviado para: $email\n";
             }
 
-            file_put_contents('/var/log/enviar_lembretes_cron.log', "E-mails enviados com sucesso em: " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+            file_put_contents('/var/log/enviar_lembretes_cron.log', "E-mails enviados com sucesso: " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
         } catch (Exception $e) {
             error_log($e->getMessage());
             file_put_contents('/var/log/enviar_lembretes_cron.log', "Erro ao enviar email: " . $e->getMessage() . "\n", FILE_APPEND);
