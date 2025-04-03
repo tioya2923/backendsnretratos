@@ -6,7 +6,6 @@ require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/../connect/cors.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -25,7 +24,8 @@ function enviarLembretes()
     $usuarios = [];
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            $usuarios[] = ['email' => $row['email'], 'nome' => $row['nome']];
+            // Atualizar para usar o campo correto 'name' no lugar de 'nome'
+            $usuarios[] = ['email' => $row['email'], 'name' => $row['name']];
         }
         echo "Usuários que precisam de lembrete carregados com sucesso.\n";
     } else {
@@ -51,10 +51,10 @@ function enviarLembretes()
 
             foreach ($usuarios as $usuario) {
                 $email = $usuario['email'];
-                $nome = $usuario['nome'];
+                $name = $usuario['name']; // Usar o campo 'name'
 
                 // Substituir placeholder pelo nome do destinatário
-                $body = str_replace('{{nome}}', $nome, $bodyTemplate);
+                $body = str_replace('{{nome}}', $name, $bodyTemplate);
 
                 $mail->addAddress($email);
                 $mail->isHTML(true);
