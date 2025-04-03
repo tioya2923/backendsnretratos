@@ -4,8 +4,7 @@ date_default_timezone_set('Europe/Lisbon'); // Definir o fuso horário para Port
 
 require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/../connect/cors.php';
-require_once '../../vendor/autoload.php';
-
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 
 use PHPMailer\PHPMailer\PHPMailer;
