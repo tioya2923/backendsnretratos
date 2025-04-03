@@ -17,10 +17,6 @@ function enviarLembretes()
 {
     global $conn;
 
-    // Credenciais de e-mail
-    $emailUsername = 'retratospsn@gmail.com'; // Nome de usuário
-    $emailPassword = 'thqyngnejodzttwl';      // Senha do Gmail (senha de aplicativo)
-
     // Carregar emails e nomes dos usuários que ainda não se inscreveram
     $sql = "SELECT email, name FROM usuarios WHERE id NOT IN (SELECT id FROM refeicoes WHERE data = CURDATE())";
 
@@ -38,19 +34,19 @@ function enviarLembretes()
     }
 
     // Função para enviar e-mails
-    function sendEmail($subject, $bodyTemplate, $usuarios, $emailUsername, $emailPassword)
+    function sendEmail($subject, $bodyTemplate, $usuarios)
     {
         $mail = new PHPMailer(true);
         try {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = $emailUsername; // Usar credenciais diretamente
-            $mail->Password = $emailPassword; // Usar credenciais diretamente
+            $mail->Username = getenv('MAIL_USERNAME'); // Carregar credenciais do .env
+            $mail->Password = getenv('MAIL_PASSWORD'); // Carregar credenciais do .env
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
             $mail->Port = 465;
 
-            $mail->setFrom($emailUsername, utf8_decode('Paróquia de São Nicolau'));
+            $mail->setFrom(getenv('MAIL_USERNAME'), utf8_decode('Paróquia de São Nicolau'));
 
             foreach ($usuarios as $usuario) {
                 $email = $usuario['email'];
@@ -69,7 +65,7 @@ function enviarLembretes()
                 echo "E-mail enviado para: $email\n";
             }
 
-            file_put_contents('/var/log/enviar_lembretes_cron.log', "E-mails enviados com sucesso: " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+            file_put_contents('/var/log/enviar_lembretes_cron.log', "E-mails enviados com sucesso em: " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
         } catch (Exception $e) {
             error_log($e->getMessage());
             file_put_contents('/var/log/enviar_lembretes_cron.log', "Erro ao enviar email: " . $e->getMessage() . "\n", FILE_APPEND);
@@ -98,7 +94,7 @@ function enviarLembretes()
     foreach ($timesToCheck as $dayTime => $emailData) {
         list($day, $time) = explode('-', $dayTime);
         if ($currentDayOfWeek == $day && $currentTime == $time) {
-            sendEmail($emailData['subject'], $emailData['body'], $usuarios, $emailUsername, $emailPassword);
+            sendEmail($emailData['subject'], $emailData['body'], $usuarios);
         }
     }
 
@@ -108,3 +104,6 @@ function enviarLembretes()
 enviarLembretes();
 
 ?>
+---
+
+
