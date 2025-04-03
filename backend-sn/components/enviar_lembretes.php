@@ -24,7 +24,6 @@ function enviarLembretes()
     $usuarios = [];
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            // Atualizar para usar o campo correto 'name' no lugar de 'nome'
             $usuarios[] = ['email' => $row['email'], 'name' => $row['name']];
         }
         echo "Usuários que precisam de lembrete carregados com sucesso.\n";
@@ -42,8 +41,8 @@ function enviarLembretes()
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = getenv('MAIL_USERNAME'); // Variável de ambiente
-            $mail->Password = getenv('MAIL_PASSWORD'); // Variável de ambiente
+            $mail->Username = getenv('MAIL_USERNAME'); // Carregar credenciais do .env
+            $mail->Password = getenv('MAIL_PASSWORD'); // Carregar credenciais do .env
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
             $mail->Port = 465;
 
@@ -105,3 +104,6 @@ function enviarLembretes()
 enviarLembretes();
 
 ?>
+---
+
+
