@@ -9,7 +9,9 @@ require_once '../../vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-// Função para enviar lembretes
+// Adicionando um log para monitorar execução
+file_put_contents('/var/log/enviar_lembretes_cron.log', "Script iniciado em " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
+
 // Função para enviar lembretes
 function enviarLembretes()
 {
@@ -19,13 +21,14 @@ function enviarLembretes()
     $sql = "SELECT email, nome FROM usuarios WHERE id NOT IN (SELECT usuario_id FROM refeicoes WHERE data = CURDATE())";
     $result = $conn->query($sql);
     $usuarios = [];
-    if ($result->num_rows > 0) {
+    if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
             $usuarios[] = ['email' => $row['email'], 'nome' => $row['nome']];
         }
         echo "Usuários que precisam de lembrete carregados com sucesso.\n";
     } else {
-        echo "Todos os usuários já se inscreveram.\n";
+        echo "Todos os usuários já se inscreveram ou erro na consulta.\n";
+        file_put_contents('/var/log/enviar_lembretes_cron.log', "Consulta SQL não retornou resultados em: " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
         return; // Finalizar, pois não há lembretes a enviar
     }
 
@@ -37,12 +40,12 @@ function enviarLembretes()
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = 'retratospsn@gmail.com';
-            $mail->Password = 'thqyngnejodzttwl'; // Mantenha senhas seguras!
+            $mail->Username = getenv('MAIL_USERNAME'); // Variável de ambiente
+            $mail->Password = getenv('MAIL_PASSWORD'); // Variável de ambiente
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
             $mail->Port = 465;
 
-            $mail->setFrom('retratospsn@gmail.com', utf8_decode('Paróquia de São Nicolau'));
+            $mail->setFrom(getenv('MAIL_USERNAME'), utf8_decode('Paróquia de São Nicolau'));
 
             foreach ($usuarios as $usuario) {
                 $email = $usuario['email'];
@@ -58,11 +61,13 @@ function enviarLembretes()
                 $mail->AltBody = strip_tags($body);
                 $mail->send();
                 $mail->clearAddresses(); // Limpar para o próximo e-mail
+                echo "E-mail enviado para: $email\n";
             }
 
-            echo "E-mails enviados com sucesso.\n";
+            file_put_contents('/var/log/enviar_lembretes_cron.log', "E-mails enviados com sucesso em: " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
         } catch (Exception $e) {
             error_log($e->getMessage());
+            file_put_contents('/var/log/enviar_lembretes_cron.log', "Erro ao enviar email: " . $e->getMessage() . "\n", FILE_APPEND);
             echo "Erro ao enviar email: " . $e->getMessage() . "\n";
         }
     }
@@ -76,7 +81,7 @@ function enviarLembretes()
     $timesToCheck = [
         '1-09:00' => [
             'subject' => 'Bom dia!',
-            'body' => '<p>Olá, {{nome}}! Preparado para mais uma semana? Ainda não fizestes a isncrição para as refeições. <a href="https://snrefeicoes.pt/login">INSCREVA-TE</a></p><p>São Nicolau agradece!</p>'
+            'body' => '<p>Olá, {{nome}}! Preparado para mais uma semana? Ainda não fizestes a inscrição para as refeições. <a href="https://snrefeicoes.pt/login">INSCREVA-TE</a></p><p>São Nicolau agradece!</p>'
         ],
         '4-21:30' => [
             'subject' => 'Boa noite!',
@@ -94,5 +99,7 @@ function enviarLembretes()
 
     $conn->close();
 }
+
+enviarLembretes();
 
 ?>
