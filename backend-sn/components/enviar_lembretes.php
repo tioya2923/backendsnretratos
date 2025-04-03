@@ -19,7 +19,8 @@ function enviarLembretes()
     global $conn;
 
     // Carregar emails e nomes dos usuários que ainda não se inscreveram
-    $sql = "SELECT email, name FROM usuarios WHERE id NOT IN (SELECT usuario_id FROM refeicoes WHERE data = CURDATE())";
+    $sql = "SELECT email, name FROM usuarios WHERE id NOT IN (SELECT id FROM refeicoes WHERE data = CURDATE())";
+
     $result = $conn->query($sql);
     $usuarios = [];
     if ($result && $result->num_rows > 0) {
