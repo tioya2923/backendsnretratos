@@ -17,6 +17,10 @@ function enviarLembretes()
 {
     global $conn;
 
+    // Credenciais de e-mail
+    $emailUsername = 'retratospsn@gmail.com'; // Nome de usuário
+    $emailPassword = 'thqyngnejodzttwl';      // Senha do Gmail (senha de aplicativo)
+
     // Carregar emails e nomes dos usuários que ainda não se inscreveram
     $sql = "SELECT email, name FROM usuarios WHERE id NOT IN (SELECT id FROM refeicoes WHERE data = CURDATE())";
 
@@ -24,7 +28,6 @@ function enviarLembretes()
     $usuarios = [];
     if ($result && $result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            // Atualizar para usar o campo correto 'name' no lugar de 'nome'
             $usuarios[] = ['email' => $row['email'], 'name' => $row['name']];
         }
         echo "Usuários que precisam de lembrete carregados com sucesso.\n";
@@ -35,19 +38,19 @@ function enviarLembretes()
     }
 
     // Função para enviar e-mails
-    function sendEmail($subject, $bodyTemplate, $usuarios)
+    function sendEmail($subject, $bodyTemplate, $usuarios, $emailUsername, $emailPassword)
     {
         $mail = new PHPMailer(true);
         try {
             $mail->isSMTP();
             $mail->Host = 'smtp.gmail.com';
             $mail->SMTPAuth = true;
-            $mail->Username = getenv('MAIL_USERNAME'); // Variável de ambiente
-            $mail->Password = getenv('MAIL_PASSWORD'); // Variável de ambiente
+            $mail->Username = $emailUsername; // Usar credenciais diretamente
+            $mail->Password = $emailPassword; // Usar credenciais diretamente
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
             $mail->Port = 465;
 
-            $mail->setFrom(getenv('MAIL_USERNAME'), utf8_decode('Paróquia de São Nicolau'));
+            $mail->setFrom($emailUsername, utf8_decode('Paróquia de São Nicolau'));
 
             foreach ($usuarios as $usuario) {
                 $email = $usuario['email'];
@@ -95,7 +98,7 @@ function enviarLembretes()
     foreach ($timesToCheck as $dayTime => $emailData) {
         list($day, $time) = explode('-', $dayTime);
         if ($currentDayOfWeek == $day && $currentTime == $time) {
-            sendEmail($emailData['subject'], $emailData['body'], $usuarios);
+            sendEmail($emailData['subject'], $emailData['body'], $usuarios, $emailUsername, $emailPassword);
         }
     }
 
