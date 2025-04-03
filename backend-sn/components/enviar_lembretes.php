@@ -78,7 +78,7 @@ function enviarLembretes()
             'subject' => 'Bom dia!',
             'body' => '<p>Olá, {{nome}}! Preparado para mais uma semana? Ainda não fizestes a isncrição para as refeições. <a href="https://snrefeicoes.pt/login">INSCREVA-TE</a></p><p>São Nicolau agradece!</p>'
         ],
-        '5-00:55' => [
+        '4-21:30' => [
             'subject' => 'Boa noite!',
             'body' => '<p>Olá, {{nome}}! Como está a sua semana? Relembro que ainda não fizestes a inscrição para as refeições. <a href="https://snrefeicoes.pt/login">INSCREVA-TE</a></p><p>São Nicolau agradece!</p>'
         ],
