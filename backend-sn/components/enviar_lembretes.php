@@ -27,6 +27,7 @@ function enviarLembretes()
             $usuarios[] = ['email' => $row['email'], 'name' => $row['name']];
         }
         echo "Usuários que precisam de lembrete carregados com sucesso.\n";
+        print_r($usuarios);
     } else {
         echo "Todos os usuários já se inscreveram ou erro na consulta.\n";
         file_put_contents('/var/log/enviar_lembretes_cron.log', "Consulta SQL não retornou resultados em: " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
