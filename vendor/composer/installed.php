@@ -3,7 +3,7 @@
         'name' => 'tioya/backendsnretratos',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '5f80f9fa84e850b85be5ead79dee2d8aaf5279ee',
+        'reference' => '1090b6e70e40e9dc34ac5eb3e259adce7607a7bb',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -58,7 +58,7 @@
         'tioya/backendsnretratos' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '5f80f9fa84e850b85be5ead79dee2d8aaf5279ee',
+            'reference' => '1090b6e70e40e9dc34ac5eb3e259adce7607a7bb',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
