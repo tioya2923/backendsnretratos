@@ -1,8 +1,8 @@
 <?php
 // Lista de origens permitidas
 $origensPermitidas = [
-    'https://snrefeicoes.pt',
-    'https://www.snrefeicoes.pt',
+    //'https://snrefeicoes.pt',
+    //'https://www.snrefeicoes.pt',
     'https://snref-fronten-8dbe187fda6c.herokuapp.com/'
     //'http://localhost:3000',
    
