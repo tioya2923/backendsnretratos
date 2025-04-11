@@ -1,10 +1,10 @@
 <?php
 require 'cors.php';
-require_once __DIR__ . '/../../vendor/autoload.php';
+//require_once __DIR__ . '/../../vendor/autoload.php';
 //require '../../vendor/autoload.php';
 //require_once '../connect/server.php';
 //require_once '../connect/cors.php';
-//require_once '../../vendor/autoload.php';
+require_once 'vendor/autoload.php';
 // Carregar o arquivo .env
 $dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__);
 $dotenv->load();
