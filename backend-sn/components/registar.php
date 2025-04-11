@@ -1,6 +1,6 @@
 <?php
 
-ini_set('display_errors', 1); // Desativa a exibição de erros
+ini_set('display_errors', 0); // Desativa a exibição de erros para o usuário
 
 function handleUncaughtException($e) {
     error_log($e->getMessage()); // Loga o erro
@@ -16,17 +16,19 @@ require_once '../../vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-$name = filter_input(INPUT_POST, "name", FILTER_UNSAFE_RAW);
-$email = filter_input(INPUT_POST, "email", FILTER_SANITIZE_EMAIL);
+// Sanitizar e validar dados de entrada
+$name = filter_input(INPUT_POST, "name", FILTER_SANITIZE_STRING);
+$email = filter_input(INPUT_POST, "email", FILTER_VALIDATE_EMAIL);
 $password = filter_input(INPUT_POST, "password", FILTER_UNSAFE_RAW);
-$newRegistration = filter_input(INPUT_POST, "newRegistration", FILTER_VALIDATE_BOOLEAN);
+$newRegistration = filter_var($_POST['newRegistration'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 
-if (empty($name) || empty($email) || empty($password)) {
+if (empty($name) || !$email || empty($password) || is_null($newRegistration)) {
     exit('Dados inválidos.');
 }
 
 $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
+// Verificar se o email já está registrado
 $sql = "SELECT * FROM usuarios WHERE email = ?";
 if ($stmt = $conn->prepare($sql)) {
     $stmt->bind_param("s", $email);
@@ -39,8 +41,9 @@ if ($stmt = $conn->prepare($sql)) {
     }
 }
 
+// Gerar código de aprovação e URL
 $approvalCode = bin2hex(random_bytes(16));
-$approvalUrl = "https://snrefeicoes.pt/linkAprovacao.php?code=$approvalCode";
+$approvalUrl = "https://snrefeicoes.pt/backend-sn/components/linkAprovacao.php?code=$approvalCode";
 
 $adminEmail = 'retratospsn@gmail.com';
 $sql = "INSERT INTO usuarios (name, email, password, status, approval_code) VALUES (?, ?, ?, 'pendente', ?)";
@@ -54,11 +57,11 @@ if ($stmt = $conn->prepare($sql)) {
                 $mail->Host = 'smtp.gmail.com';
                 $mail->SMTPAuth = true;
                 $mail->Username = 'retratospsn@gmail.com';
-                $mail->Password = 'thqyngnejodzttwl'; 
+                $mail->Password = getenv('EMAIL_PASSWORD'); // Usar variável de ambiente para a senha
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
                 $mail->Port = 465;
 
-                $mail->setFrom('retratospsn@gmail.com', utf8_decode('Paróquia de São Nicolau'));
+                $mail->setFrom('retratospsn@gmail.com', 'Paróquia de São Nicolau');
                 $mail->addAddress($adminEmail);
 
                 $mail->isHTML(true);
@@ -69,11 +72,12 @@ if ($stmt = $conn->prepare($sql)) {
                 $mail->send();
                 echo 'Registo feito com sucesso. Aguarde pela aprovação do Administrador.';
             } catch (Exception $e) {
-                handleUncaughtException($e); // Chama o manipulador de exceções personalizado
+                handleUncaughtException($e);
             }
         }
     }
     $stmt->close();
 }
+
 $conn->close();
 ?>
