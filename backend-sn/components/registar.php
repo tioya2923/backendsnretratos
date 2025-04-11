@@ -40,7 +40,7 @@ if ($stmt = $conn->prepare($sql)) {
 }
 
 $approvalCode = bin2hex(random_bytes(16));
-$approvalUrl = "https://backend-sn-a37ffec6bc3e.herokuapp.com/components/linkAprovacao.php?code=$approvalCode";
+$approvalUrl = "https://snrefeicoes.pt/linkAprovacao.php?code=$approvalCode";
 
 $adminEmail = 'retratospsn@gmail.com';
 $sql = "INSERT INTO usuarios (name, email, password, status, approval_code) VALUES (?, ?, ?, 'pendente', ?)";
