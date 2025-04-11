@@ -43,7 +43,7 @@ if ($stmt = $conn->prepare($sql)) {
 
 // Gerar código de aprovação e URL
 $approvalCode = bin2hex(random_bytes(16));
-$approvalUrl = "https://snrefeicoes.pt/backend-sn/components/linkAprovacao.php?code=TESTE123";
+$approvalUrl = "https://snrefeicoes.pt/backend-sn/components/linkAprovacao.php?code=$approvalCode";
 
 $adminEmail = 'retratospsn@gmail.com';
 $sql = "INSERT INTO usuarios (name, email, password, status, approval_code) VALUES (?, ?, ?, 'pendente', ?)";
