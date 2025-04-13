@@ -42,7 +42,7 @@ try {
     if ($conn->connect_error) {
         die(json_encode(['error' => 'Erro na conexão: ' . $conn->connect_error]));
     }
-    
+
 } catch (Exception $e) {
     die(json_encode(['error' => 'Erro ao conectar: ' . $e->getMessage()]));
 }
