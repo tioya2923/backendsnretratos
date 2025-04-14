@@ -3,11 +3,11 @@
         'name' => 'tioya/backendsnretratos',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'ea21c1816133757a3cb9f0314bf8304d35fc0157',
+        'reference' => 'ef9fdfaeeaececa2c2765ae7c3cfb5ef97f0444a',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => false,
+        'dev' => true,
     ),
     'versions' => array(
         'graham-campbell/result-type' => array(
@@ -67,7 +67,7 @@
         'tioya/backendsnretratos' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'ea21c1816133757a3cb9f0314bf8304d35fc0157',
+            'reference' => 'ef9fdfaeeaececa2c2765ae7c3cfb5ef97f0444a',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
