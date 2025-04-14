@@ -1,9 +1,11 @@
 <?php
-require 'cors.php'; // Carrega o CORS
-require_once 'vendor/autoload.php'; // Carrega o autoloader do Composer
+require 'cors.php'; // Habilita o CORS
+require_once 'vendor/autoload.php'; // Autoloader do Composer
 
-// Recuperar a variável DB_URL do ambiente
+// Recuperar as variáveis do ambiente configuradas no Heroku
 $dbUrl = getenv('DB_URL');
+$mailUsername = getenv('MAIL_USERNAME');
+$mailPassword = getenv('MAIL_PASSWORD');
 
 if (!$dbUrl) {
     die(json_encode(['error' => 'A variável DB_URL não foi carregada.']));
@@ -32,8 +34,8 @@ try {
     if ($conn->connect_error) {
         die(json_encode(['error' => 'Erro na conexão: ' . $conn->connect_error]));
     }
-
 } catch (Exception $e) {
     die(json_encode(['error' => 'Erro ao conectar: ' . $e->getMessage()]));
 }
+
 ?>
