@@ -91,7 +91,7 @@ function enviarLembretes()
             'body' => '<p>Olá, {{nome}}! Como está a sua semana? Relembro que ainda não fizestes a inscrição para as refeições. <a href="https://snrefeicoes.pt/login">INSCREVA-TE</a></p><p>São Nicolau agradece!</p>'
         ],
 
-         '5-14:50' => [
+         '1-17:05' => [
             'subject' => 'Boa tarde!',
             'body' => '<p>Olá, {{nome}}! Como está a sua semana? Relembro que ainda não fizestes a inscrição para as refeições. <a href="https://snrefeicoes.pt/login">INSCREVA-TE</a></p><p>São Nicolau agradece!</p>'
         ],

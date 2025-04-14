@@ -44,8 +44,8 @@ if (!empty($approvalCode)) {
 
                             $mail->isHTML(true);
                             $mail->Subject = 'Conta aprovada!';
-                            $mail->Body = "Parabéns, registo aprovado! <a href='https://snrefeicoes.pt/login'>Iniciar sessão</a><br>";
-                            $mail->AltBody = "Parabéns, registo aprovado! Iniciar sessão: https://snrefeicoes.pt/login";
+                            $mail->Body = "Parabéns, registo aprovado! <a href='https://snref-fronten-8dbe187fda6c.herokuapp.com/login'>Iniciar sessão</a><br>";
+                            $mail->AltBody = "Parabéns, registo aprovado! Iniciar sessão: https://snref-fronten-8dbe187fda6c.herokuapp.com/login";
 
                             $mail->send();
                             echo "Usuário aprovado com sucesso!";
