@@ -1,13 +1,6 @@
 <?php
-require 'cors.php';
-//require_once __DIR__ . '/../../vendor/autoload.php';
-//require '../../vendor/autoload.php';
-//require_once '../connect/server.php';
-//require_once '../connect/cors.php';
-require_once 'vendor/autoload.php';
-// Carregar o arquivo .env
-$dotenv = Dotenv\Dotenv::createUnsafeImmutable(__DIR__);
-$dotenv->load();
+require 'cors.php'; // Carrega o CORS
+require_once 'vendor/autoload.php'; // Carrega o autoloader do Composer
 
 // Recuperar a variável DB_URL do ambiente
 $dbUrl = getenv('DB_URL');
@@ -15,9 +8,6 @@ $dbUrl = getenv('DB_URL');
 if (!$dbUrl) {
     die(json_encode(['error' => 'A variável DB_URL não foi carregada.']));
 }
-
-// Exibir a URL para depuração (opcional)
-//echo "Recuperar o ambiente: " . $dbUrl . "<br>";
 
 // Processar a URL de conexão ao banco de dados
 $url = parse_url($dbUrl);
@@ -46,5 +36,4 @@ try {
 } catch (Exception $e) {
     die(json_encode(['error' => 'Erro ao conectar: ' . $e->getMessage()]));
 }
-
 ?>
