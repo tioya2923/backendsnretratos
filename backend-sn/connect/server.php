@@ -1,6 +1,7 @@
 <?php
 require 'cors.php'; // Habilita o CORS
-require_once 'vendor/autoload.php'; // Autoloader do Composer
+//require_once 'vendor/autoload.php'; // Autoloader do Composer
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 // Recuperar as variáveis do ambiente configuradas no Heroku
 $dbUrl = getenv('DB_URL');
