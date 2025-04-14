@@ -1,5 +1,6 @@
 {
     "name": "tioya/backendsnretratos",
+    
     "autoload": {
         "psr-4": {
             "Tioya\\Backendsnretratos\\": "src/"
