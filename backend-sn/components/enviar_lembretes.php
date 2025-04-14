@@ -84,16 +84,16 @@ function enviarLembretes()
     $timesToCheck = [
         '1-09:00' => [
             'subject' => 'Bom dia!',
-            'body' => '<p>Olá, {{nome}}! Preparado para mais uma semana? Ainda não fizestes a inscrição para as refeições. <a href="https://snrefeicoes.pt/login">INSCREVA-TE</a></p><p>São Nicolau agradece!</p>'
+            'body' => '<p>Olá, {{nome}}! Preparado para mais uma semana? Ainda não fizestes a inscrição para as refeições. <a href="https://snref-fronten-8dbe187fda6c.herokuapp.com/login">INSCREVA-TE</a></p><p>São Nicolau agradece!</p>'
         ],
         '4-21:30' => [
             'subject' => 'Boa noite!',
-            'body' => '<p>Olá, {{nome}}! Como está a sua semana? Relembro que ainda não fizestes a inscrição para as refeições. <a href="https://snrefeicoes.pt/login">INSCREVA-TE</a></p><p>São Nicolau agradece!</p>'
+            'body' => '<p>Olá, {{nome}}! Como está a sua semana? Relembro que ainda não fizestes a inscrição para as refeições. <a href="https://snref-fronten-8dbe187fda6c.herokuapp.com/login">INSCREVA-TE</a></p><p>São Nicolau agradece!</p>'
         ],
 
-         '1-17:05' => [
+         '1-17:15' => [
             'subject' => 'Boa tarde!',
-            'body' => '<p>Olá, {{nome}}! Como está a sua semana? Relembro que ainda não fizestes a inscrição para as refeições. <a href="https://snrefeicoes.pt/login">INSCREVA-TE</a></p><p>São Nicolau agradece!</p>'
+            'body' => '<p>Olá, {{nome}}! Como está a sua semana? Relembro que ainda não fizestes a inscrição para as refeições. <a href="https://snref-fronten-8dbe187fda6c.herokuapp.com/login">INSCREVA-TE</a></p><p>São Nicolau agradece!</p>'
         ],
 
 
