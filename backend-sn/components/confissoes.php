@@ -1,7 +1,7 @@
 <?php
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
-require '../vendor/autoload.php'; // Certifique-se de que este caminho está correto
+require_once __DIR__ . '/../../vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 

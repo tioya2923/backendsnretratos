@@ -2,7 +2,7 @@
 // Incluir os ficheiros de conexão e configurações necessários
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
-require_once '../../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;

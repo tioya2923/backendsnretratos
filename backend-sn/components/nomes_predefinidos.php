@@ -1,7 +1,7 @@
 <?php
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
-require_once '../../vendor/autoload.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 // Adicionar Nome
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
