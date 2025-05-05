@@ -2,15 +2,16 @@
 
 ini_set('display_errors', 0); // Desativa a exibição de erros para o usuário
 
-function handleUncaughtException($e) {
+function handleUncaughtException($e)
+{
     error_log($e->getMessage()); // Loga o erro
     exit('Olá! Estaremos juntos brevemente!'); // Mensagem amigável para o usuário
 }
 
 set_exception_handler('handleUncaughtException'); // Define o manipulador de exceções
 
-require_once '../connect/server.php';
-require_once '../connect/cors.php';
+require_once __DIR__ . '/../connect/server.php';
+require_once __DIR__ . '/../connect/cors.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -56,8 +57,8 @@ if ($stmt = $conn->prepare($sql)) {
                 $mail->isSMTP();
                 $mail->Host = 'smtp.gmail.com';
                 $mail->SMTPAuth = true;
-                $mail->Username = 'retratospsn@gmail.com';
-                $mail->Password = getenv('EMAIL_PASSWORD'); // Usar variável de ambiente para a senha
+                $mail->Username = getenv('MAIL_USERNAME'); // Carregar credenciais do .env
+                $mail->Password = getenv('MAIL_PASSWORD'); // Carregar credenciais do .env
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
                 $mail->Port = 465;
 

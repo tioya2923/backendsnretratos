@@ -1,7 +1,7 @@
 <?php
 // Incluir os ficheiros de conexão e configurações necessários
-require_once '../connect/server.php';
-require_once '../connect/cors.php';
+require_once __DIR__ . '/../connect/server.php';
+require_once __DIR__ . '/../connect/cors.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -34,8 +34,8 @@ if (!empty($approvalCode)) {
                             $mail->isSMTP();
                             $mail->Host = 'smtp.gmail.com';
                             $mail->SMTPAuth = true;
-                            $mail->Username = 'retratospsn@gmail.com';
-                            $mail->Password = 'thqyngnejodzttwl'; // Certifique-se de que esta senha está protegida!
+                            $mail->Username = getenv('MAIL_USERNAME'); // Carregar credenciais do .env
+                            $mail->Password = getenv('MAIL_PASSWORD'); // Carregar credenciais do .env
                             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
                             $mail->Port = 465;
 
