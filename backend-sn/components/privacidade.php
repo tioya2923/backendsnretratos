@@ -1,8 +1,9 @@
 <?php
-session_start();
+
+require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
-require_once __DIR__ . '/../../vendor/autoload.php';
+session_start();
 
 // Verifique se o email e a senha foram postados
 if(isset($_POST['email']) && isset($_POST['password'])) {

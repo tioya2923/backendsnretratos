@@ -1,12 +1,24 @@
+
 <?php
 require 'cors.php'; // Habilita o CORS
-//require_once 'vendor/autoload.php'; // Autoloader do Composer
 require_once __DIR__ . '/../../vendor/autoload.php';
 
-// Recuperar as variáveis do ambiente configuradas no Heroku
-$dbUrl = getenv('DB_URL');
-$mailUsername = getenv('MAIL_USERNAME');
-$mailPassword = getenv('MAIL_PASSWORD');
+// Carregar variáveis do .env corretamente a partir da raiz do projeto
+if (class_exists('Dotenv\Dotenv')) {
+    $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__, 2));
+    $envVars = $dotenv->safeLoad();
+    // Forçar variáveis do .env para getenv, $_ENV e $_SERVER
+    foreach ($envVars as $key => $value) {
+        putenv("$key=$value");
+        $_ENV[$key] = $value;
+        $_SERVER[$key] = $value;
+    }
+}
+
+// Tentar buscar DB_URL de todas as fontes possíveis
+$dbUrl = getenv('DB_URL') ?: ($_ENV['DB_URL'] ?? ($_SERVER['DB_URL'] ?? null));
+$mailUsername = getenv('MAIL_USERNAME') ?: ($_ENV['MAIL_USERNAME'] ?? ($_SERVER['MAIL_USERNAME'] ?? null));
+$mailPassword = getenv('MAIL_PASSWORD') ?: ($_ENV['MAIL_PASSWORD'] ?? ($_SERVER['MAIL_PASSWORD'] ?? null));
 
 if (!$dbUrl) {
     die(json_encode(['error' => 'A variável DB_URL não foi carregada.']));

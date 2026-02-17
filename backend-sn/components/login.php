@@ -1,8 +1,9 @@
 <?php
 // Incluir o ficheiro de conexão
+
+require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/../connect/cors.php';
-require_once __DIR__ . '/../../vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -12,17 +13,14 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 // Obter os dados do formulário
-$email = $_POST['email'];
-$password = $_POST['password'];
+
+$email = isset($_POST['email']) ? filter_var(trim($_POST['email']), FILTER_VALIDATE_EMAIL) : '';
+$password = isset($_POST['password']) ? $_POST['password'] : '';
 
 // Validar os dados
-if (!isset($_POST['email']) || !isset($_POST['password'])) {
-    echo json_encode(["message" => "Email e/ou password não fornecidos"]);
-    exit();
-}
 
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo json_encode(["message" => "Por favor, insira um email válido"]);
+if (!$email || !$password) {
+    echo json_encode(["status" => "error", "message" => "Email e/ou password não fornecidos ou inválidos"]);
     exit();
 }
 
@@ -41,25 +39,27 @@ if ($result->num_rows > 0) {
             session_start();
             $_SESSION['user_id'] = $row['id'];
             $_SESSION['user_name'] = $row['name'];
-            
+            // Verificar se o número de WhatsApp está cadastrado
+            if (empty($row['whatsapp'])) {
+                echo json_encode(["status" => "whatsapp_required", "message" => "Por favor, insira seu número de WhatsApp para continuar.", "user_id" => $row['id']]);
+                exit();
+            }
             // Gerar um token de autenticação
             $token = bin2hex(random_bytes(16));
-            
             // Armazenar o token no banco de dados
             $update_stmt = $conn->prepare("UPDATE usuarios SET token = ? WHERE id = ?");
             $update_stmt->bind_param("si", $token, $row['id']);
             $update_stmt->execute();
-            
             // Retornar uma resposta de sucesso com o token
-            echo json_encode(["message" => "Login bem-sucedido", "name" => $row['name'], "token" => $token]);
+            echo json_encode(["status" => "success", "message" => "Login bem-sucedido", "name" => $row['name'], "token" => $token]);
         } else {
-            echo json_encode(["message" => "A sua conta ainda não foi aprovada pelo administrador."]);
+            echo json_encode(["status" => "error", "message" => "A sua conta ainda não foi aprovada pelo administrador."]);
         }
         exit();
     } else {
-        echo json_encode(["message" => "Senha incorreta, tente novamente"]);
+        echo json_encode(["status" => "error", "message" => "Senha incorreta, tente novamente"]);
     }
 } else {
-    echo json_encode(["message" => "Usuário não encontrado, por favor, regista-te"]);
+    echo json_encode(["status" => "error", "message" => "Usuário não encontrado, por favor, regista-te"]);
 }
 ?>

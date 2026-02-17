@@ -1,5 +1,7 @@
 <?php
 // Incluir o ficheiro de conexão
+
+require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
 
@@ -15,17 +17,14 @@ function sanitize_input($data) {
 }
 
 // Obter os dados do formulário e sanitizá-los
-$email = sanitize_input($_POST['email'] ?? '');
-$password = sanitize_input($_POST['password'] ?? '');
+
+$email = isset($_POST['email']) ? filter_var(trim($_POST['email']), FILTER_VALIDATE_EMAIL) : '';
+$password = isset($_POST['password']) ? htmlspecialchars(trim($_POST['password'])) : '';
 
 // Validar os dados
-if (empty($email) || empty($password)) {
-    echo json_encode(["message" => "Por favor, preencha todos os campos"]);
-    exit();
-}
 
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo json_encode(["message" => "Por favor, insira um email válido"]);
+if (!$email || !$password) {
+    echo json_encode(["status" => "error", "message" => "Por favor, preencha todos os campos corretamente"]);
     exit();
 }
 
@@ -44,14 +43,20 @@ if ($result->num_rows > 0) {
         // Definir variáveis de sessão
         $_SESSION['user_id'] = $row['id'];
         $_SESSION['user_name'] = $row['name'];
-        
+
+        // Verificar se o número de WhatsApp está cadastrado
+        if (empty($row['whatsapp'])) {
+            echo json_encode(["status" => "whatsapp_required", "message" => "Por favor, insira seu número de WhatsApp para continuar.", "user_id" => $row['id']]);
+            exit();
+        }
+
         // Em vez de redirecionar, retorne uma resposta de sucesso
-        echo json_encode(["message" => "Login bem-sucedido"]);
+        echo json_encode(["status" => "success", "message" => "Login bem-sucedido"]);
     } else {
-        echo json_encode(["message" => "Senha incorreta, tente novamente"]);
+        echo json_encode(["status" => "error", "message" => "Senha incorreta, tente novamente"]);
     }
 } else {
-    echo json_encode(["message" => "Usuário não encontrado, por favor, registre-se"]);
+    echo json_encode(["status" => "error", "message" => "Usuário não encontrado, por favor, registre-se"]);
 }
 
 // Fechar a declaração preparada

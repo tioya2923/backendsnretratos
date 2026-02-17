@@ -1,7 +1,8 @@
 <?php
+
+require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
-require_once __DIR__ . '/../../vendor/autoload.php';
 header('Content-Type: application/json');
 
 // Verificar a conexão
@@ -13,7 +14,7 @@ if ($conn->connect_error) {
 $data = json_decode(file_get_contents("php://input"), true);
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($data['grupo_id']) && isset($data['tipo_refeicao']) && isset($data['data_refeicao']) && isset($data['hora_refeicao']) && isset($data['local_refeicao'])) {
-    $grupo_id = $data['grupo_id'];
+    $grupo_id = isset($data['grupo_id']) ? intval($data['grupo_id']) : 0;
     $tipo_refeicao = $data['tipo_refeicao'];
     $data_refeicao = $data['data_refeicao'];
     $hora_refeicao = $data['hora_refeicao'];
@@ -24,32 +25,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($data['grupo_id']) && isset($d
     $stmt->bind_param("issss", $grupo_id, $tipo_refeicao, $data_refeicao, $hora_refeicao, $local_refeicao);
 
     if ($stmt->execute()) {
-        echo json_encode(["message" => "Refeição adicionada com sucesso"]);
+        echo json_encode(["status" => "success", "message" => "Refeição adicionada com sucesso"]);
     } else {
-        echo json_encode(["message" => "Erro ao adicionar refeição: " . $stmt->error]);
+        echo json_encode(["status" => "error", "message" => "Erro ao adicionar refeição"]);
     }
     $stmt->close();
 } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    echo json_encode(["message" => "Dados incompletos"]);
+    echo json_encode(["status" => "error", "message" => "Dados incompletos"]);
     exit();
 }
 
 // Exibir Refeições de um Grupo Específico
 if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['grupo_id'])) {
     $grupo_id = $_GET['grupo_id'];
-    $sql = "SELECT * FROM refeicoes_grupos WHERE grupo_id = ? ORDER BY data_refeicao, hora_refeicao";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $grupo_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    $refeicoes = [];
-    while ($row = $result->fetch_assoc()) {
-        $refeicoes[] = $row;
+    if ($grupo_id > 0) {
+        $sql = "SELECT * FROM refeicoes_grupos WHERE grupo_id = ? ORDER BY data_refeicao, hora_refeicao";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $grupo_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $refeicoes = [];
+        while ($row = $result->fetch_assoc()) {
+            $refeicoes[] = $row;
+        }
+        echo json_encode($refeicoes);
+        $stmt->close();
+        exit();
+    } else {
+        echo json_encode(["status" => "error", "message" => "ID do grupo inválido"]);
+        exit();
     }
-    echo json_encode($refeicoes);
-    $stmt->close();
-    exit();
 }
 
 // Buscar todos os grupos com suas refeições e total de membros

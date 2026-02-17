@@ -1,8 +1,9 @@
 <?php
 
+
+require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
-require_once __DIR__ . '/../../vendor/autoload.php';
 
 
 use Aws\S3\S3Client;
@@ -24,25 +25,24 @@ $s3 = new S3Client([
 // Verifica se o ID da foto foi fornecido
 if (isset($_GET['id'])) {
   // Sanitiza o ID da foto
-  $id = filter_input(INPUT_GET, 'id', FILTER_SANITIZE_NUMBER_INT);
+
+  $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
   // Consulta para eliminar a foto
-  $sql = "DELETE FROM fotos WHERE id = ?";
-
-  // Prepara a declaração
-  $stmt = $conn->prepare($sql);
-
-  // Liga o parâmetro
-  $stmt->bind_param("i", $id);
-
-  // Executa a declaração
-  if ($stmt->execute()) {
-    echo json_encode(['status' => 'success', 'message' => 'Foto eliminada com sucesso.']);
+  if ($id > 0) {
+    $sql = "DELETE FROM fotos WHERE id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $id);
+    if ($stmt->execute()) {
+      echo json_encode(['status' => 'success', 'message' => 'Foto eliminada com sucesso.']);
+    } else {
+      echo json_encode(['status' => 'error', 'message' => 'Erro ao eliminar a foto.']);
+    }
   } else {
-    echo json_encode(['status' => 'error', 'message' => 'Erro ao eliminar a foto.']);
+    echo json_encode(['status' => 'error', 'message' => 'ID da foto inválido.']);
   }
 } else {
-  echo json_encode(['status' => 'error', 'message' => 'ID da foto não fornecido.']);
+  echo json_encode(["status" => "error", "message" => "ID da foto não fornecido."]);
 }
 
 $conn->close();
