@@ -1,7 +1,7 @@
 <?php
-// Função para enviar mensagem WhatsApp via API HTTP local (WPPConnect)
 function sendWhatsApp($to, $message) {
-    $url = 'http://localhost:3000/send-message';
+    // Altere o IP para o da sua Hetzner
+    $url = 'http://95.217.178.106:3000/send-message'; 
 
     $data = [
         'number' => $to,
@@ -13,7 +13,7 @@ function sendWhatsApp($to, $message) {
             'header'  => "Content-type: application/json\r\n",
             'method'  => 'POST',
             'content' => json_encode($data),
-            'timeout' => 10
+            'timeout' => 15 // Aumentei um pouco o timeout para conexões externas
         ]
     ];
 
@@ -21,7 +21,9 @@ function sendWhatsApp($to, $message) {
     $result = @file_get_contents($url, false, $context);
 
     if ($result === FALSE) {
-        error_log('Erro ao enviar WhatsApp via WPPConnect');
+        // Pega o erro detalhado para o log
+        $error = error_get_last();
+        error_log('Erro ao enviar WhatsApp: ' . $error['message']);
         return false;
     }
 
