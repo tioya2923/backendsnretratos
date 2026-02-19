@@ -1,6 +1,6 @@
 <?php
 /**
- * Script de Cron: Envio de Lembretes de Refeições via WhatsApp
+ * Script de Cron: Envio de Lembretes de Refeições e Inscrição via WhatsApp
  * Localização sugerida: /app/scripts/enviar_lembretes_cron.php
  */
 
@@ -8,7 +8,6 @@ date_default_timezone_set('Europe/Lisbon');
 
 // Importação das dependências
 require_once __DIR__ . '/../connect/server.php';
-// Certifique-se de que o whatsapp_utils.php contém a função sendWhatsApp com cURL e o IP da Hetzner
 require_once __DIR__ . '/whatsapp_utils.php';
 
 // Configuração do Log
@@ -19,12 +18,58 @@ file_put_contents($logfile, "--- Script iniciado em $timestamp ---\n", FILE_APPE
 echo "[LOG] Script iniciado em $timestamp\n";
 
 /**
- * Função principal que processa a lógica de envio
+ * NOVO: Função para enviar lembrete de inscrição semanal
+ * Segundas às 09:00 e Quintas às 21:30
+ */
+function enviarLembreteInscricao() {
+    global $logfile, $conn;
+
+    $diaSemana = date('N'); // 1 (Segunda) a 7 (Domingo)
+    $horaMinuto = date('H:i');
+
+    // Define os alvos: Segunda às 09:00 e Quinta às 21:30
+    $isSegundaManha = ($diaSemana == 1 && $horaMinuto === '09:00');
+    $isQuintaNoite = ($diaSemana == 4 && $horaMinuto === '21:30');
+
+    if (!$isSegundaManha && !$isQuintaNoite) {
+        return; // Não é horário de lembrete de inscrição
+    }
+
+    echo "[LOG] Iniciando lembrete de INSCRIÇÃO semanal...\n";
+    
+    $link = "https://snref-fronten-8dbe187fda6c.herokuapp.com/";
+    $sql = "SELECT name, whatsapp, email FROM usuarios WHERE whatsapp IS NOT NULL AND whatsapp != ''";
+    $res = $conn->query($sql);
+
+    if ($res) {
+        while ($user = $res->fetch_assoc()) {
+            $nome = trim($user['name']);
+            $whats = $user['whatsapp'];
+            $email = $user['email'];
+
+            $msg = "Olá $nome! Recordamos que deve fazer a sua inscrição para as próximas refeições. Para se inscrever devidamente, clique aqui: $link";
+
+            // Envio via WhatsApp
+            $resultado = sendWhatsApp($whats, $msg);
+            
+            // Envio via Email (Utilizando a função mail padrão do PHP ou sua integração)
+            $assunto = "Recordatório: Inscrição para Refeições";
+            $headers = "From: no-reply@saonicolau.pt\r\nContent-Type: text/plain; charset=UTF-8";
+            mail($email, $assunto, $msg, $headers);
+
+            $status = $resultado ? "SUCESSO" : "FALHA";
+            file_put_contents($logfile, "[$status] Lembrete Inscrição: $nome ($whats / $email)\n", FILE_APPEND);
+            usleep(200000); // 0.2s pausa
+        }
+    }
+}
+
+/**
+ * Função principal para lembretes diários (Mantida conforme original)
  */
 function enviarLembretes() {
     global $logfile, $conn;
 
-    // Definição dos horários das refeições
     $horarios = [
         'almoco' => '13:30',
         'jantar' => '20:00'
@@ -34,21 +79,15 @@ function enviarLembretes() {
     $horaAgora = date('H:i');
 
     foreach ($horarios as $tipo => $horaRefeicao) {
-        
-        // Calcula a hora de envio (30 minutos antes da refeição)
         $horaEnvio = date('H:i', strtotime($horaRefeicao) - 30 * 60);
 
-        
-         //Se não for o minuto exato de envio, ignora esta refeição
         if ($horaAgora !== $horaEnvio) {
             echo "[DEBUG] Hora atual ($horaAgora) não coincide com a hora de envio ($horaEnvio) para o $tipo.\n";
-           continue;
+            continue;
         }
  
         echo "[LOG] Processando envios para o $tipo (Refeição: $horaRefeicao)...\n";
-        file_put_contents($logfile, "Processando $tipo das $horaRefeicao\n", FILE_APPEND);
 
-        // 1. Buscar todos os usuários
         $usuarios = [];
         $sqlUsuarios = "SELECT id, name, whatsapp FROM usuarios WHERE whatsapp IS NOT NULL AND whatsapp != ''";
         $resUsuarios = $conn->query($sqlUsuarios);
@@ -59,12 +98,8 @@ function enviarLembretes() {
             }
         }
 
-        if (empty($usuarios)) {
-            echo "[AVISO] Nenhum usuário com WhatsApp encontrado.\n";
-            continue;
-        }
+        if (empty($usuarios)) continue;
 
-        // 2. Buscar inscritos na refeição de hoje
         $inscritos = [];
         $sqlInscritos = "SELECT nome_completo FROM refeicoes WHERE data = '$dataHoje' AND $tipo = '1'";
         $resInscritos = $conn->query($sqlInscritos);
@@ -75,17 +110,11 @@ function enviarLembretes() {
             }
         }
 
-        echo "[LOG] Usuários totais: " . count($usuarios) . " | Inscritos hoje: " . count($inscritos) . "\n";
-
-        // 3. Loop de envio de mensagens
         foreach ($usuarios as $user) {
             $nomeUsuario = trim($user['name']);
             $numeroWhatsApp = $user['whatsapp'];
-
-            // Verifica se o nome do usuário está na lista de inscritos
             $estaInscrito = in_array($nomeUsuario, $inscritos);
 
-            // Define a mensagem
             if ($estaInscrito) {
                 $msg = ($tipo === 'almoco') 
                     ? "Olá $nomeUsuario! Não te esqueças que estás inscrito para o almoço de hoje às $horaRefeicao. Bom apetite!" 
@@ -96,25 +125,18 @@ function enviarLembretes() {
                     : "Olá $nomeUsuario. Informamos que não constas na lista de inscritos para o jantar de hoje.";
             }
 
-            // Dispara para o servidor Hetzner
             $resultado = sendWhatsApp($numeroWhatsApp, $msg);
-
             $statusLog = $resultado ? "SUCESSO" : "FALHA";
-            $logMsg = "[$statusLog] Destinatário: $nomeUsuario ($numeroWhatsApp) | Tipo: $tipo\n";
-            
-            echo "[LOG] $logMsg";
-            file_put_contents($logfile, $logMsg, FILE_APPEND);
-
-            // Pequena pausa (0.2s) para não sobrecarregar a API da Hetzner em envios massivos
+            file_put_contents($logfile, "[$statusLog] Lembrete Diário: $nomeUsuario ($tipo)\n", FILE_APPEND);
             usleep(200000);
         }
     }
 }
 
-// Execução da função
-enviarLembretes();
+// Execução das duas lógicas
+enviarLembreteInscricao(); // Verifica se é hora de lembrar da inscrição semanal
+enviarLembretes();         // Verifica se é hora dos lembretes diários 30min antes
 
 echo "[LOG] Script finalizado.\n";
 file_put_contents($logfile, "--- Script finalizado em " . date('Y-m-d H:i:s') . " ---\n\n", FILE_APPEND);
-
 ?>
