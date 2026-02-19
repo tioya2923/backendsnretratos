@@ -38,13 +38,13 @@ function enviarLembretes() {
         // Calcula a hora de envio (30 minutos antes da refeição)
         $horaEnvio = date('H:i', strtotime($horaRefeicao) - 30 * 60);
 
-        /**
-         *Se não for o minuto exato de envio, ignora esta refeição
-        *if ($horaAgora !== $horaEnvio) {
-            *echo "[DEBUG] Hora atual ($horaAgora) não coincide com a hora de envio ($horaEnvio) para o $tipo.\n";
-           *continue;
-        *}
- */
+        
+         //Se não for o minuto exato de envio, ignora esta refeição
+        if ($horaAgora !== $horaEnvio) {
+            echo "[DEBUG] Hora atual ($horaAgora) não coincide com a hora de envio ($horaEnvio) para o $tipo.\n";
+           continue;
+        }
+ 
         echo "[LOG] Processando envios para o $tipo (Refeição: $horaRefeicao)...\n";
         file_put_contents($logfile, "Processando $tipo das $horaRefeicao\n", FILE_APPEND);
 
