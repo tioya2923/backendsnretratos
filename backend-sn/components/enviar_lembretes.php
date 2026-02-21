@@ -98,7 +98,7 @@ function enviarLembretes() {
             $estaInscrito = in_array($nomeComparacao, $inscritos);
 
             if ($estaInscrito) {
-                $msg = "Olá $nomeOriginal! Não te esqueças que estás inscrito para o " . ($tipo === 'almoco' ? "almoço" : "jantar") . " de hoje às $horaRefeicao. Bom apetite!";
+                $msg = "Olá $nomeOriginal! Não te esqueças que estás inscrito para o " . ($tipo === 'almoco' ? "almoço" : "jantar") . " de hoje. Bom apetite!";
             } else {
                 $msg = "Olá $nomeOriginal. Informamos que não constas na lista de inscritos para o " . ($tipo === 'almoco' ? "almoço" : "jantar") . " de hoje.";
             }
