@@ -22,7 +22,7 @@ function enviarLembreteInscricao() {
     $diaSemana = date('N'); 
     $horaMinuto = date('H:i');
 
-    $isSegundaManha = ($diaSemana == 1 && $horaMinuto === '13:05');
+    $isSegundaManha = ($diaSemana == 1 && $horaMinuto === '13:10');
     $isQuintaNoite = ($diaSemana == 4 && $horaMinuto === '21:30');
 
     if (!$isSegundaManha && !$isQuintaNoite) return;
