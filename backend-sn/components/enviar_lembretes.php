@@ -22,7 +22,7 @@ function enviarLembreteInscricao() {
     $diaSemana = date('N'); 
     $horaMinuto = date('H:i');
 
-    $isSegundaManha = ($diaSemana == 1 && $horaMinuto === '09:00');
+    $isSegundaManha = ($diaSemana == 1 && $horaMinuto === '13:05');
     $isQuintaNoite = ($diaSemana == 4 && $horaMinuto === '21:30');
 
     if (!$isSegundaManha && !$isQuintaNoite) return;
@@ -37,7 +37,7 @@ function enviarLembreteInscricao() {
             $nome = trim($user['name']);
             $whats = $user['whatsapp'];
             $email = $user['email'];
-            $msg = "Olá $nome! Recordamos que deve fazer a sua inscrição para as próximas refeições. Clique aqui: $link";
+            $msg = "Olá, $nome! Recordamos que deve fazer a sua inscrição para as próximas refeições. Clique aqui: $link";
             sendWhatsApp($whats, $msg);
             $assunto = "Recordatório: Inscrição para Refeições";
             $headers = "From: no-reply@saonicolau.pt\r\nContent-Type: text/plain; charset=UTF-8";
@@ -98,7 +98,7 @@ function enviarLembretes() {
             $estaInscrito = in_array($nomeComparacao, $inscritos);
 
             if ($estaInscrito) {
-                $msg = "Olá $nomeOriginal! Não te esqueças que estás inscrito para o " . ($tipo === 'almoco' ? "almoço" : "jantar") . " de hoje. Bom apetite!";
+                $msg = "Olá, $nomeOriginal! Não te esqueças que estás inscrito para o " . ($tipo === 'almoco' ? "almoço" : "jantar") . " de hoje. Bom apetite!";
             } else {
                 $msg = "Olá $nomeOriginal. Informamos que não constas na lista de inscritos para o " . ($tipo === 'almoco' ? "almoço" : "jantar") . " de hoje.";
             }
@@ -106,7 +106,7 @@ function enviarLembretes() {
             $resultado = sendWhatsApp($numeroWhatsApp, $msg);
             $statusLog = $resultado ? "SUCESSO" : "FALHA";
             file_put_contents($logfile, "[$statusLog] Lembrete Diário ($tipo): $nomeOriginal\n", FILE_APPEND);
-            usleep(250000); // Aumentado ligeiramente para estabilidade
+            usleep(1000000); // Aumentado ligeiramente para estabilidade
         }
     }
 }
