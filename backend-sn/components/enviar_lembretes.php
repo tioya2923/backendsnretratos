@@ -7,6 +7,7 @@ date_default_timezone_set('Europe/Lisbon');
 
 require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/whatsapp_utils.php';
+require_once __DIR__ . '/push_utils.php';
 
 // FORÇAR UTF-8 para evitar erro em nomes com acentos (ex: João, Pelágio)
 $conn->set_charset("utf8mb4");
@@ -45,6 +46,14 @@ function enviarLembreteInscricao() {
             usleep(200000);
         }
     }
+
+    // Push notification para todos os subscritores
+    sendPushNotification(
+        $conn,
+        'Inscrição para Refeições',
+        'Recorda-te de fazer a tua inscrição para as próximas refeições!',
+        '/refeicoes'
+    );
 }
 
 function enviarLembretes() {
@@ -106,8 +115,17 @@ function enviarLembretes() {
             $resultado = sendWhatsApp($numeroWhatsApp, $msg);
             $statusLog = $resultado ? "SUCESSO" : "FALHA";
             file_put_contents($logfile, "[$statusLog] Lembrete Diário ($tipo): $nomeOriginal\n", FILE_APPEND);
-            usleep(1000000); // Aumentado ligeiramente para estabilidade
+            usleep(1000000);
         }
+
+        // Push notification para todos os subscritores
+        $tipoLabel = $tipo === 'almoco' ? 'almoço' : 'jantar';
+        sendPushNotification(
+            $conn,
+            "Lembrete de " . ucfirst($tipoLabel),
+            "Daqui a 10 minutos começa o $tipoLabel. Boa refeição!",
+            '/refeicoes'
+        );
     }
 }
 
