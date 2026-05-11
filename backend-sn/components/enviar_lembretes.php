@@ -118,14 +118,42 @@ function enviarLembretes() {
             usleep(1000000);
         }
 
-        // Push notification para todos os subscritores
+        // Push notifications personalizadas (igual ao WhatsApp)
         $tipoLabel = $tipo === 'almoco' ? 'almoço' : 'jantar';
-        sendPushNotification(
-            $conn,
-            "Lembrete de " . ucfirst($tipoLabel),
-            "Daqui a 10 minutos começa o $tipoLabel. Boa refeição!",
-            '/refeicoes'
-        );
+        $inscritosIds   = [];
+        $naoInscritosIds = [];
+
+        $resTodosUsers = $conn->query("SELECT id, name FROM usuarios");
+        if ($resTodosUsers) {
+            while ($u = $resTodosUsers->fetch_assoc()) {
+                $nomeComp = mb_strtolower(trim($u['name']), 'UTF-8');
+                if (in_array($nomeComp, $inscritos)) {
+                    $inscritosIds[] = $u['id'];
+                } else {
+                    $naoInscritosIds[] = $u['id'];
+                }
+            }
+        }
+
+        if (!empty($inscritosIds)) {
+            sendPushNotification(
+                $conn,
+                ucfirst($tipoLabel) . " de hoje",
+                "Estás inscrito para o $tipoLabel de hoje. Bom apetite! 🍽️",
+                '/refeicoes',
+                $inscritosIds
+            );
+        }
+
+        if (!empty($naoInscritosIds)) {
+            sendPushNotification(
+                $conn,
+                ucfirst($tipoLabel) . " de hoje",
+                "Não estás inscrito para o $tipoLabel de hoje.",
+                '/refeicoes',
+                $naoInscritosIds
+            );
+        }
     }
 }
 
