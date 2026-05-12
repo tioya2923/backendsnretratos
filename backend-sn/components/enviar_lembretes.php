@@ -52,7 +52,11 @@ function enviarLembreteInscricao() {
         $conn,
         'Inscrição para Refeições',
         'Recorda-te de fazer a tua inscrição para as próximas refeições!',
-        '/refeicoes'
+        '/refeicoes',
+        [],
+        'psn-refeicao',
+        7200,
+        'high'
     );
 }
 
@@ -141,7 +145,10 @@ function enviarLembretes() {
                 ucfirst($tipoLabel) . " de hoje",
                 "Estás inscrito para o $tipoLabel de hoje. Bom apetite! 🍽️",
                 '/refeicoes',
-                $inscritosIds
+                $inscritosIds,
+                'psn-refeicao',
+                3600,
+                'high'
             );
         }
 
@@ -151,7 +158,10 @@ function enviarLembretes() {
                 ucfirst($tipoLabel) . " de hoje",
                 "Não estás inscrito para o $tipoLabel de hoje.",
                 '/refeicoes',
-                $naoInscritosIds
+                $naoInscritosIds,
+                'psn-refeicao',
+                3600,
+                'high'
             );
         }
     }

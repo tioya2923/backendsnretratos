@@ -49,7 +49,10 @@ foreach ($atividades as $atv) {
         "⏰ Lembrete — $titulo",
         $body,
         '/perfil',
-        [$atv['user_id']]
+        [$atv['user_id']],
+        'psn-atividade',  // tag
+        600,              // TTL: 10 min (irrelevante depois disso)
+        'high'            // urgência máxima
     );
 
     $updStmt = $conn->prepare(

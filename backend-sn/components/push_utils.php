@@ -16,8 +16,24 @@ function criarTabelaSubscricoes($conn) {
     ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 }
 
-// Envia notificação push para subscrições específicas ou para todas
-function sendPushNotification($conn, string $title, string $body, string $url = '/', array $userIds = []) {
+/**
+ * Envia notificação push para subscrições específicas ou para todas.
+ *
+ * @param string $tag     Tag da notificação (agrupa tipo: 'psn-refeicao', 'psn-atividade', etc.)
+ * @param int    $ttl     Tempo de vida em segundos (0 = entrega imediata ou descarta)
+ * @param string $urgency 'very-low' | 'low' | 'normal' | 'high'
+ *                        'high' fura o Doze mode do Android e APNS priority no iOS.
+ */
+function sendPushNotification(
+    $conn,
+    string $title,
+    string $body,
+    string $url = '/',
+    array  $userIds = [],
+    string $tag     = 'psn',
+    int    $ttl     = 3600,
+    string $urgency = 'high'
+) {
     criarTabelaSubscricoes($conn);
 
     $vapidPublic  = getenv('VAPID_PUBLIC_KEY');
@@ -37,8 +53,8 @@ function sendPushNotification($conn, string $title, string $body, string $url = 
         ]
     ];
 
-    $webPush = new WebPush($auth);
-    $payload = json_encode(['title' => $title, 'body' => $body, 'url' => $url]);
+    $webPush = new WebPush($auth, ['TTL' => $ttl, 'urgency' => $urgency]);
+    $payload = json_encode(['title' => $title, 'body' => $body, 'url' => $url, 'tag' => $tag]);
 
     if (!empty($userIds)) {
         $placeholders = implode(',', array_fill(0, count($userIds), '?'));
@@ -69,7 +85,6 @@ function sendPushNotification($conn, string $title, string $body, string $url = 
         }
     }
 
-    // Limpar subscrições expiradas
     foreach ($endpointsToDelete as $endpoint) {
         $stmt = $conn->prepare("DELETE FROM push_subscriptions WHERE endpoint = ?");
         $stmt->bind_param("s", $endpoint);
