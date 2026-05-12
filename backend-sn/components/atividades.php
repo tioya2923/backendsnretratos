@@ -6,19 +6,27 @@ require_once '../connect/auth.php';
 
 $conn->set_charset("utf8mb4");
 
-// Criar tabela se não existir
+// Migração automática: se a tabela tem o schema antigo (dia_semana), recria
+$tableExists = $conn->query("SHOW TABLES LIKE 'atividades_usuario'")->num_rows > 0;
+if ($tableExists) {
+    $hasOld = $conn->query("SHOW COLUMNS FROM atividades_usuario LIKE 'dia_semana'")->num_rows > 0;
+    if ($hasOld) {
+        $conn->query("DROP TABLE atividades_usuario");
+    }
+}
+
 $conn->query("CREATE TABLE IF NOT EXISTS atividades_usuario (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     tipo VARCHAR(50) NOT NULL,
     titulo VARCHAR(100),
-    dia_semana TINYINT NOT NULL COMMENT '0=Dom 1=Seg 2=Ter 3=Qua 4=Qui 5=Sex 6=Sab',
+    data_atividade DATE NOT NULL,
     hora_inicio TIME NOT NULL,
     ativo TINYINT(1) NOT NULL DEFAULT 1,
     ultima_notificacao DATETIME DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_user (user_id),
-    INDEX idx_notif (dia_semana, hora_inicio, ativo)
+    INDEX idx_data (data_atividade, hora_inicio, ativo)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
 $userId = getAuthUserId($conn);
@@ -33,57 +41,57 @@ $method = $_SERVER['REQUEST_METHOD'];
 // GET — listar atividades do utilizador
 if ($method === 'GET') {
     $stmt = $conn->prepare(
-        "SELECT id, tipo, titulo, dia_semana, hora_inicio, ativo
-         FROM atividades_usuario WHERE user_id = ? ORDER BY dia_semana, hora_inicio"
+        "SELECT id, tipo, titulo, data_atividade, hora_inicio, ativo
+         FROM atividades_usuario WHERE user_id = ?
+         ORDER BY data_atividade, hora_inicio"
     );
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     foreach ($rows as &$r) {
-        $r['id']         = (int)$r['id'];
-        $r['dia_semana'] = (int)$r['dia_semana'];
-        $r['ativo']      = (bool)$r['ativo'];
+        $r['id']    = (int)$r['id'];
+        $r['ativo'] = (bool)$r['ativo'];
         $r['hora_inicio'] = substr($r['hora_inicio'], 0, 5);
     }
     echo json_encode($rows);
     exit;
 }
 
-// POST — criar atividade (suporta múltiplos dias)
+// POST — criar atividade
 if ($method === 'POST') {
-    $data = json_decode(file_get_contents('php://input'), true);
-    $tipo       = trim($data['tipo'] ?? '');
-    $titulo     = trim($data['titulo'] ?? '');
-    $dias       = $data['dias'] ?? [];      // array de 0-6
-    $horaInicio = $data['hora_inicio'] ?? '';
+    $data          = json_decode(file_get_contents('php://input'), true);
+    $tipo          = trim($data['tipo'] ?? '');
+    $titulo        = trim($data['titulo'] ?? '');
+    $dataAtividade = trim($data['data_atividade'] ?? '');
+    $horaInicio    = trim($data['hora_inicio'] ?? '');
 
-    if (empty($tipo) || empty($dias) || empty($horaInicio)) {
+    if (empty($tipo) || empty($dataAtividade) || empty($horaInicio)) {
         http_response_code(400);
-        echo json_encode(['error' => 'Campos obrigatórios: tipo, dias, hora_inicio']);
+        echo json_encode(['error' => 'Campos obrigatórios: tipo, data_atividade, hora_inicio']);
         exit;
     }
 
-    $criados = [];
-    $stmt = $conn->prepare(
-        "INSERT INTO atividades_usuario (user_id, tipo, titulo, dia_semana, hora_inicio)
-         VALUES (?, ?, ?, ?, ?)"
-    );
-
-    foreach ($dias as $dia) {
-        $dia = (int)$dia;
-        $stmt->bind_param("issis", $userId, $tipo, $titulo, $dia, $horaInicio);
-        $stmt->execute();
-        $criados[] = $conn->insert_id;
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataAtividade)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Formato de data inválido']);
+        exit;
     }
 
-    echo json_encode(['success' => true, 'ids' => $criados]);
+    $stmt = $conn->prepare(
+        "INSERT INTO atividades_usuario (user_id, tipo, titulo, data_atividade, hora_inicio)
+         VALUES (?, ?, ?, ?, ?)"
+    );
+    $stmt->bind_param("issss", $userId, $tipo, $titulo, $dataAtividade, $horaInicio);
+    $stmt->execute();
+
+    echo json_encode(['success' => true, 'id' => $conn->insert_id]);
     exit;
 }
 
-// PUT — atualizar atividade (toggle ativo ou editar campos)
+// PUT — atualizar atividade
 if ($method === 'PUT') {
     $data = json_decode(file_get_contents('php://input'), true);
-    $id = (int)($data['id'] ?? 0);
+    $id   = (int)($data['id'] ?? 0);
 
     if (!$id) {
         http_response_code(400);
@@ -91,7 +99,6 @@ if ($method === 'PUT') {
         exit;
     }
 
-    // Verificar que pertence ao utilizador
     $stmt = $conn->prepare("SELECT id FROM atividades_usuario WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $id, $userId);
     $stmt->execute();
@@ -125,10 +132,10 @@ if ($method === 'PUT') {
         $types   .= 's';
         $values[] = $data['titulo'];
     }
-    if (isset($data['dia_semana'])) {
-        $fields[] = 'dia_semana = ?';
-        $types   .= 'i';
-        $values[] = (int)$data['dia_semana'];
+    if (isset($data['data_atividade'])) {
+        $fields[] = 'data_atividade = ?';
+        $types   .= 's';
+        $values[] = $data['data_atividade'];
     }
 
     if (empty($fields)) {
@@ -151,7 +158,7 @@ if ($method === 'PUT') {
 // DELETE — eliminar atividade
 if ($method === 'DELETE') {
     $data = json_decode(file_get_contents('php://input'), true);
-    $id = (int)($data['id'] ?? 0);
+    $id   = (int)($data['id'] ?? 0);
 
     if (!$id) {
         http_response_code(400);

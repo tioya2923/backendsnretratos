@@ -1,7 +1,6 @@
 <?php
 /**
- * Cron: Notificações de atividades pessoais (executa a cada minuto)
- * Heroku Scheduler: configurar para correr a cada 10 minutos com ajuste de janela
+ * Cron: Notificações de atividades pessoais (executa a cada 10 minutos)
  */
 date_default_timezone_set('Europe/Lisbon');
 
@@ -11,31 +10,27 @@ require_once __DIR__ . '/push_utils.php';
 
 $conn->set_charset("utf8mb4");
 
-$logfile = __DIR__ . '/notificar_atividades_cron.log';
+$logfile   = __DIR__ . '/notificar_atividades_cron.log';
 $timestamp = date('Y-m-d H:i:s');
 file_put_contents($logfile, "--- Iniciado em $timestamp ---\n", FILE_APPEND);
 
 // Janela: atividades que começam entre 9 e 11 minutos a partir de agora
-// (±1 minuto de tolerância para execuções que não sejam ao segundo exato)
-$horaMin  = date('H:i:s', strtotime('+9 minutes'));
-$horaMax  = date('H:i:s', strtotime('+11 minutes'));
-$hoje     = date('Y-m-d');
-
-// DAYOFWEEK MySQL: 1=Dom, 2=Seg, ..., 7=Sab → subtrai 1 para obter 0-6
-$diaSemana = (int)date('w'); // PHP date('w'): 0=Dom, 6=Sab — já no formato correto
+$horaMin = date('H:i:s', strtotime('+9 minutes'));
+$horaMax = date('H:i:s', strtotime('+11 minutes'));
+$hoje    = date('Y-m-d');
 
 $sql = "
     SELECT a.id, a.user_id, a.tipo, a.titulo, a.hora_inicio,
            COALESCE(NULLIF(a.titulo,''), a.tipo) AS nome_atividade
     FROM atividades_usuario a
     WHERE a.ativo = 1
-      AND a.dia_semana = ?
+      AND a.data_atividade = ?
       AND TIME(a.hora_inicio) BETWEEN ? AND ?
-      AND (a.ultima_notificacao IS NULL OR DATE(a.ultima_notificacao) < ?)
+      AND a.ultima_notificacao IS NULL
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("isss", $diaSemana, $horaMin, $horaMax, $hoje);
+$stmt->bind_param("sss", $hoje, $horaMin, $horaMax);
 $stmt->execute();
 $atividades = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
@@ -53,11 +48,10 @@ foreach ($atividades as $atv) {
         $conn,
         "⏰ Lembrete — $titulo",
         $body,
-        '/atividades',
+        '/perfil',
         [$atv['user_id']]
     );
 
-    // Marcar como notificado hoje para não reenviar
     $updStmt = $conn->prepare(
         "UPDATE atividades_usuario SET ultima_notificacao = NOW() WHERE id = ?"
     );
