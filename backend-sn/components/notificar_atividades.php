@@ -46,7 +46,7 @@ foreach ($atividades as $atv) {
 
     sendPushNotification(
         $conn,
-        "⏰ Lembrete — $titulo",
+        "Lembrete — $titulo",
         $body,
         '/perfil',
         [$atv['user_id']],
