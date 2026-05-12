@@ -2,20 +2,21 @@
 date_default_timezone_set('Europe/Lisbon');
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+require_once '../connect/auth.php';
 
 $conn->set_charset("utf8mb4");
 
-function getUser($conn) {
-    $headers = apache_request_headers();
-    $token = str_replace('Bearer ', '', $headers['Authorization'] ?? '');
-    if (empty($token)) return null;
-    $stmt = $conn->prepare("SELECT id, name, email, whatsapp, status FROM usuarios WHERE token = ?");
-    $stmt->bind_param("s", $token);
-    $stmt->execute();
-    return $stmt->get_result()->fetch_assoc();
+$userId = getAuthUserId($conn);
+if (!$userId) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Não autenticado']);
+    exit;
 }
 
-$user = getUser($conn);
+$stmt = $conn->prepare("SELECT id, name, email, whatsapp, status FROM usuarios WHERE id = ?");
+$stmt->bind_param("i", $userId);
+$stmt->execute();
+$user = $stmt->get_result()->fetch_assoc();
 if (!$user) {
     http_response_code(401);
     echo json_encode(['error' => 'Não autenticado']);

@@ -1,6 +1,7 @@
 <?php
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+require_once '../connect/auth.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/push_utils.php';
 
@@ -11,9 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Verificar que é admin (token de administrador)
-$headers = apache_request_headers();
-$token = str_replace('Bearer ', '', $headers['Authorization'] ?? '');
-
+$token = getBearerToken();
 if (empty($token)) {
     http_response_code(401);
     echo json_encode(['error' => 'Token obrigatório']);

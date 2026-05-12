@@ -2,6 +2,7 @@
 date_default_timezone_set('Europe/Lisbon');
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+require_once '../connect/auth.php';
 
 $conn->set_charset("utf8mb4");
 
@@ -20,19 +21,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS atividades_usuario (
     INDEX idx_notif (dia_semana, hora_inicio, ativo)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
-// Verificar token
-function getUsuarioId($conn) {
-    $headers = apache_request_headers();
-    $token = str_replace('Bearer ', '', $headers['Authorization'] ?? '');
-    if (empty($token)) return null;
-    $stmt = $conn->prepare("SELECT id FROM usuarios WHERE token = ?");
-    $stmt->bind_param("s", $token);
-    $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
-    return $row ? $row['id'] : null;
-}
-
-$userId = getUsuarioId($conn);
+$userId = getAuthUserId($conn);
 if (!$userId) {
     http_response_code(401);
     echo json_encode(['error' => 'Não autenticado']);

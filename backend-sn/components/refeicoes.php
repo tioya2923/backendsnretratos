@@ -13,6 +13,7 @@ set_exception_handler('handleUncaughtException'); // Define o manipulador de exc
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+require_once '../connect/auth.php';
 
 // Verificar a conexão
 if ($conn->connect_error) {
@@ -21,18 +22,14 @@ if ($conn->connect_error) {
 
 // Função para verificar o token de autenticação
 function verificarToken($conn) {
-    $headers = apache_request_headers();
-    if (isset($headers['Authorization'])) {
-        $token = str_replace('Bearer ', '', $headers['Authorization']);
-        $sql = "SELECT name FROM usuarios WHERE token = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("s", $token);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows > 0) {
-            $row = $result->fetch_assoc();
-            return $row['name'];
-        }
+    $token = getBearerToken();
+    if (empty($token)) return null;
+    $stmt = $conn->prepare("SELECT name FROM usuarios WHERE token = ?");
+    $stmt->bind_param("s", $token);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        return $result->fetch_assoc()['name'];
     }
     return null;
 }

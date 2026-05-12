@@ -1,6 +1,7 @@
 <?php
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+require_once '../connect/auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -8,25 +9,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$headers = apache_request_headers();
-$token = str_replace('Bearer ', '', $headers['Authorization'] ?? '');
-
-if (empty($token)) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Token obrigatório']);
-    exit;
-}
-
-$stmt = $conn->prepare("SELECT id FROM usuarios WHERE token = ?");
-$stmt->bind_param("s", $token);
-$stmt->execute();
-$user = $stmt->get_result()->fetch_assoc();
-
-if (!$user) {
+$userId = getAuthUserId($conn);
+if (!$userId) {
     http_response_code(401);
     echo json_encode(['error' => 'Token inválido']);
     exit;
 }
+$user = ['id' => $userId];
 
 $data = json_decode(file_get_contents('php://input'), true);
 $endpoint = $data['endpoint'] ?? '';
