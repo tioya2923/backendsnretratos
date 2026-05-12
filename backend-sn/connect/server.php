@@ -21,6 +21,7 @@ $mailUsername = getenv('MAIL_USERNAME') ?: ($_ENV['MAIL_USERNAME'] ?? ($_SERVER[
 $mailPassword = getenv('MAIL_PASSWORD') ?: ($_ENV['MAIL_PASSWORD'] ?? ($_SERVER['MAIL_PASSWORD'] ?? null));
 
 if (!$dbUrl) {
+    http_response_code(503);
     die(json_encode(['error' => 'A variável DB_URL não foi carregada.']));
 }
 
@@ -28,6 +29,7 @@ if (!$dbUrl) {
 $url = parse_url($dbUrl);
 
 if (!isset($url["host"], $url["user"], $url["pass"], $url["path"])) {
+    http_response_code(503);
     die(json_encode(['error' => 'URL de conexão ao banco está incompleta.']));
 }
 
@@ -45,9 +47,11 @@ define('DB_NAME', $db);
 try {
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
     if ($conn->connect_error) {
+        http_response_code(503);
         die(json_encode(['error' => 'Erro na conexão: ' . $conn->connect_error]));
     }
 } catch (Exception $e) {
+    http_response_code(503);
     die(json_encode(['error' => 'Erro ao conectar: ' . $e->getMessage()]));
 }
 
