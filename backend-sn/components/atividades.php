@@ -4,6 +4,9 @@ require_once '../connect/server.php';
 require_once '../connect/cors.php';
 require_once '../connect/auth.php';
 
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Pragma: no-cache');
+
 $conn->set_charset("utf8mb4");
 
 // Migração automática: se a tabela tem o schema antigo (dia_semana), recria
