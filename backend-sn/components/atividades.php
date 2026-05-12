@@ -40,6 +40,18 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // GET — listar atividades do utilizador
 if ($method === 'GET') {
+    // Apaga automaticamente atividades cujo momento já passou
+    $hoje  = date('Y-m-d');
+    $agora = date('H:i:s');
+    $stmtDel = $conn->prepare(
+        "DELETE FROM atividades_usuario WHERE user_id = ? AND (
+            data_atividade < ? OR
+            (data_atividade = ? AND hora_inicio < ?)
+        )"
+    );
+    $stmtDel->bind_param("isss", $userId, $hoje, $hoje, $agora);
+    $stmtDel->execute();
+
     $stmt = $conn->prepare(
         "SELECT id, tipo, titulo, data_atividade, hora_inicio, ativo
          FROM atividades_usuario WHERE user_id = ?
@@ -74,6 +86,19 @@ if ($method === 'POST') {
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataAtividade)) {
         http_response_code(400);
         echo json_encode(['error' => 'Formato de data inválido']);
+        exit;
+    }
+
+    $hoje  = date('Y-m-d');
+    $agora = date('H:i');
+    if ($dataAtividade < $hoje) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Não é possível criar uma atividade numa data já passada.']);
+        exit;
+    }
+    if ($dataAtividade === $hoje && $horaInicio <= $agora) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Não é possível criar uma atividade a uma hora já passada.']);
         exit;
     }
 
