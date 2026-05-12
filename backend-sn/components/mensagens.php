@@ -39,6 +39,24 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
 
+    // ?nao_lidas=1 → contagem de mensagens não lidas (para badge no navbar)
+    if (isset($_GET['nao_lidas'])) {
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) AS total
+            FROM mensagens m
+            LEFT JOIN mensagem_leituras ml
+                   ON ml.mensagem_id = m.id AND ml.utilizador_id = ?
+            WHERE (m.destinatario_id = ? OR m.destinatario_id IS NULL)
+              AND m.remetente_id != ?
+              AND ml.mensagem_id IS NULL
+        ");
+        $stmt->bind_param("iii", $userId, $userId, $userId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        echo json_encode(['count' => (int)$row['total']]);
+        exit;
+    }
+
     // ?utilizadores → lista de utilizadores para o seletor de destinatários
     if (isset($_GET['utilizadores'])) {
         $stmt = $conn->prepare("SELECT id, name FROM usuarios WHERE id != ? ORDER BY name");
