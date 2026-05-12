@@ -51,8 +51,10 @@ if ($method === 'GET') {
     $stmt->execute();
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     foreach ($rows as &$r) {
-        $r['ativo'] = (bool)$r['ativo'];
-        $r['hora_inicio'] = substr($r['hora_inicio'], 0, 5); // HH:MM
+        $r['id']         = (int)$r['id'];
+        $r['dia_semana'] = (int)$r['dia_semana'];
+        $r['ativo']      = (bool)$r['ativo'];
+        $r['hora_inicio'] = substr($r['hora_inicio'], 0, 5);
     }
     echo json_encode($rows);
     exit;
@@ -80,7 +82,6 @@ if ($method === 'POST') {
 
     foreach ($dias as $dia) {
         $dia = (int)$dia;
-        $stmt->bind_param("issис", $userId, $tipo, $titulo, $dia, $horaInicio);
         $stmt->bind_param("issis", $userId, $tipo, $titulo, $dia, $horaInicio);
         $stmt->execute();
         $criados[] = $conn->insert_id;
