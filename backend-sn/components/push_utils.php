@@ -53,7 +53,10 @@ function sendPushNotification(
         ]
     ];
 
-    $webPush = new WebPush($auth, ['TTL' => $ttl, 'urgency' => $urgency]);
+    // Opções por notificação: urgência e TTL garantem entrega mesmo em Doze mode (Android)
+    $notifOptions = ['TTL' => $ttl, 'urgency' => $urgency, 'topic' => $tag];
+
+    $webPush = new WebPush($auth);
     $payload = json_encode(['title' => $title, 'body' => $body, 'url' => $url, 'tag' => $tag]);
 
     if (!empty($userIds)) {
@@ -76,7 +79,8 @@ function sendPushNotification(
             'endpoint' => $row['endpoint'],
             'keys'     => ['p256dh' => $row['p256dh'], 'auth' => $row['auth']]
         ]);
-        $webPush->queueNotification($subscription, $payload);
+        // Passa TTL, urgência e topic explicitamente em cada notificação
+        $webPush->queueNotification($subscription, $payload, $notifOptions);
     }
 
     foreach ($webPush->flush() as $report) {
