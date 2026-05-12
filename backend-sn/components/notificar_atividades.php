@@ -14,9 +14,9 @@ $logfile   = __DIR__ . '/notificar_atividades_cron.log';
 $timestamp = date('Y-m-d H:i:s');
 file_put_contents($logfile, "--- Iniciado em $timestamp ---\n", FILE_APPEND);
 
-// Janela: atividades que começam entre 9 e 11 minutos a partir de agora
-$horaMin = date('H:i:s', strtotime('+9 minutes'));
-$horaMax = date('H:i:s', strtotime('+11 minutes'));
+// Janela: atividades que começam nos próximos 30 minutos (garante que o cron nunca falha)
+$horaMin = date('H:i:s');
+$horaMax = date('H:i:s', strtotime('+30 minutes'));
 $hoje    = date('Y-m-d');
 
 $sql = "

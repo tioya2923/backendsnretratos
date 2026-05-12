@@ -6,6 +6,7 @@
 date_default_timezone_set('Europe/Lisbon');
 
 require_once __DIR__ . '/../connect/server.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/whatsapp_utils.php';
 require_once __DIR__ . '/push_utils.php';
 
@@ -167,8 +168,62 @@ function enviarLembretes() {
     }
 }
 
+/**
+ * Envia notificações push para atividades que começam nos próximos 30 minutos.
+ * Corre sempre que o cron dispara — não tem condições de hora/dia.
+ */
+function notificarAtividades() {
+    global $logfile, $conn;
+
+    $hoje    = date('Y-m-d');
+    $agora   = date('H:i:s');
+    $horaMax = date('H:i:s', strtotime('+30 minutes'));
+
+    $stmt = $conn->prepare("
+        SELECT a.id, a.user_id, a.hora_inicio,
+               COALESCE(NULLIF(a.titulo,''), a.tipo) AS nome_atividade
+        FROM atividades_usuario a
+        WHERE a.ativo = 1
+          AND a.data_atividade = ?
+          AND TIME(a.hora_inicio) BETWEEN ? AND ?
+          AND a.ultima_notificacao IS NULL
+    ");
+    $stmt->bind_param("sss", $hoje, $agora, $horaMax);
+    $stmt->execute();
+    $atividades = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+    if (empty($atividades)) {
+        file_put_contents($logfile, "[Atividades] Nenhuma atividade para notificar agora.\n", FILE_APPEND);
+        return;
+    }
+
+    foreach ($atividades as $atv) {
+        $hora   = substr($atv['hora_inicio'], 0, 5);
+        $titulo = ucfirst(mb_strtolower($atv['nome_atividade'], 'UTF-8'));
+        $body   = "$titulo começa às $hora. Não te esqueças!";
+
+        sendPushNotification(
+            $conn,
+            "Lembrete — $titulo",
+            $body,
+            '/perfil',
+            [$atv['user_id']],
+            'psn-atividade',
+            1800,
+            'high'
+        );
+
+        $upd = $conn->prepare("UPDATE atividades_usuario SET ultima_notificacao = NOW() WHERE id = ?");
+        $upd->bind_param("i", $atv['id']);
+        $upd->execute();
+
+        file_put_contents($logfile, "[OK] Atividade notificada: User {$atv['user_id']}: {$titulo} às {$hora}\n", FILE_APPEND);
+    }
+}
+
 enviarLembreteInscricao();
 enviarLembretes();
+notificarAtividades();
 
 echo "[LOG] Script finalizado.\n";
 file_put_contents($logfile, "--- Script finalizado em " . date('Y-m-d H:i:s') . " ---\n\n", FILE_APPEND);
