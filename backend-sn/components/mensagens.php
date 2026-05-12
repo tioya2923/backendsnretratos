@@ -84,7 +84,7 @@ if ($method === 'GET') {
 
     // Recebidas (inbox)
     $stmt = $conn->prepare("
-        SELECT m.id, m.corpo, m.created_at,
+        SELECT m.id, m.remetente_id, m.corpo, m.created_at,
                u.name AS remetente_nome,
                CASE WHEN m.destinatario_id IS NULL THEN 1 ELSE 0 END AS para_todos,
                CASE WHEN ml.mensagem_id IS NOT NULL THEN 1 ELSE 0 END AS lida
@@ -101,9 +101,10 @@ if ($method === 'GET') {
     $stmt->execute();
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     foreach ($rows as &$r) {
-        $r['id']       = (int)$r['id'];
-        $r['lida']     = (bool)$r['lida'];
-        $r['para_todos'] = (bool)$r['para_todos'];
+        $r['id']          = (int)$r['id'];
+        $r['remetente_id'] = (int)$r['remetente_id'];
+        $r['lida']        = (bool)$r['lida'];
+        $r['para_todos']  = (bool)$r['para_todos'];
     }
     echo json_encode($rows);
     exit;
