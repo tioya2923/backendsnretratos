@@ -3,6 +3,8 @@ date_default_timezone_set('Europe/Lisbon');
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
 require_once '../connect/auth.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/push_utils.php';
 
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
@@ -144,6 +146,17 @@ if ($method === 'POST') {
         exit;
     }
 
+    // Get sender name for the push notification title
+    $senderStmt = $conn->prepare("SELECT name FROM usuarios WHERE id = ?");
+    $senderStmt->bind_param("i", $userId);
+    $senderStmt->execute();
+    $senderRow = $senderStmt->get_result()->fetch_assoc();
+    $senderName = $senderRow['name'] ?? 'Alguém';
+    $senderStmt->close();
+
+    $pushUserIds  = [];
+    $pushToAll    = false;
+
     if ($destinatarios === 'todos') {
         // Uma só linha com destinatario_id = NULL
         $stmt = $conn->prepare(
@@ -151,6 +164,7 @@ if ($method === 'POST') {
         );
         $stmt->bind_param("is", $userId, $corpo);
         $stmt->execute();
+        $pushToAll = true;
 
     } elseif (is_array($destinatarios) && !empty($destinatarios)) {
         // Uma linha por destinatário, com o mesmo grupo_id
@@ -164,6 +178,7 @@ if ($method === 'POST') {
             if ($destId > 0 && $destId !== $userId) {
                 $stmt->bind_param("siis", $grupoId, $userId, $destId, $corpo);
                 $stmt->execute();
+                $pushUserIds[] = $destId;
             }
         }
     } else {
@@ -173,6 +188,33 @@ if ($method === 'POST') {
     }
 
     echo json_encode(['success' => true]);
+
+    // Send push notification to recipients (after response is sent, non-blocking)
+    $notifBody    = mb_strlen($corpo) > 100 ? mb_substr($corpo, 0, 97) . '…' : $corpo;
+    $notifUserIds = $pushToAll ? [] : $pushUserIds; // empty = all subscribers except sender handled below
+    if ($pushToAll) {
+        // All users except sender
+        $allUsersStmt = $conn->prepare("SELECT id FROM usuarios WHERE id != ?");
+        $allUsersStmt->bind_param("i", $userId);
+        $allUsersStmt->execute();
+        $allUsersResult = $allUsersStmt->get_result();
+        while ($u = $allUsersResult->fetch_assoc()) {
+            $notifUserIds[] = (int)$u['id'];
+        }
+        $allUsersStmt->close();
+    }
+    if (!empty($notifUserIds)) {
+        sendPushNotification(
+            $conn,
+            $senderName,
+            $notifBody,
+            '/mensagens',
+            $notifUserIds,
+            'psn-mensagem',
+            3600,
+            'high'
+        );
+    }
     exit;
 }
 
