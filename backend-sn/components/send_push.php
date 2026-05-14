@@ -11,20 +11,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Verificar que é admin (token de administrador)
+// Verificar que é admin via chave secreta de ambiente (PUSH_ADMIN_SECRET)
+$adminSecret = getenv('PUSH_ADMIN_SECRET');
 $token = getBearerToken();
+
 if (empty($token)) {
     http_response_code(401);
     echo json_encode(['error' => 'Token obrigatório']);
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id FROM admins WHERE token = ?");
-$stmt->bind_param("s", $token);
-$stmt->execute();
-$admin = $stmt->get_result()->fetch_assoc();
-
-if (!$admin) {
+if (empty($adminSecret) || !hash_equals($adminSecret, $token)) {
     http_response_code(403);
     echo json_encode(['error' => 'Acesso negado']);
     exit;
