@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:x="urn:schemas-microsoft-com:office:excel"
+xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+xmlns:html="http://www.w3.org/TR/REC-html40">
+<Worksheet ss:Name="Table1">
+	<Table>
+		<Column ss:Index="1" ss:AutoFitWidth="0" ss:Width="110"/>
+		<Column ss:Index="2" ss:AutoFitWidth="0" ss:Width="110"/>
+		<Column ss:Index="3" ss:AutoFitWidth="0" ss:Width="110"/>
+		<Row>
+			<Cell><Data ss:Type="String">Nome</Data></Cell>
+			<Cell><Data ss:Type="String">Email</Data></Cell>
+			<Cell><Data ss:Type="String">Número de Telefone</Data></Cell>
+		</Row>
+
+		<Row>
+			<Cell><Data ss:Type="String">Adilson Correia </Data></Cell>
+			<Cell><Data ss:Type="String">adilsoncorreiax22@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Adolfo Pelágio Saculenga Monteiro </Data></Cell>
+			<Cell><Data ss:Type="String">Adolfosaculenga@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String">351933103720</Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Agostinho </Data></Cell>
+			<Cell><Data ss:Type="String">aguitostd@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Agostinho </Data></Cell>
+			<Cell><Data ss:Type="String">aguitostd@hotmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Ágoston Ďurdík</Data></Cell>
+			<Cell><Data ss:Type="String">durdik.agoston@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Alexandre Lopes</Data></Cell>
+			<Cell><Data ss:Type="String">alexlopes1234e@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">António Líbano Monteiro</Data></Cell>
+			<Cell><Data ss:Type="String">amcclm@icloud.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">António Pedro</Data></Cell>
+			<Cell><Data ss:Type="String">antoniopedrobarreiro@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Bernardo Rocha</Data></Cell>
+			<Cell><Data ss:Type="String">rjoaobernardo@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Bernardo Rodrigues</Data></Cell>
+			<Cell><Data ss:Type="String">bernardo.rodrigues_03@hotmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Cristiano Emanuel Panzo</Data></Cell>
+			<Cell><Data ss:Type="String">crismelpanzo@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Edvandro Saculenga</Data></Cell>
+			<Cell><Data ss:Type="String">azagailha@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Elson Marcos</Data></Cell>
+			<Cell><Data ss:Type="String">elsonmarcos87@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String">244942355004</Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Felippe Borges</Data></Cell>
+			<Cell><Data ss:Type="String">felippehbm@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Francisco Jose Flamez Ytriago</Data></Cell>
+			<Cell><Data ss:Type="String">flamezfrancisco43@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Gabriel Casagrande</Data></Cell>
+			<Cell><Data ss:Type="String">gabrielcasagrandeg@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Gabriel Tomás Pasadas Brilha</Data></Cell>
+			<Cell><Data ss:Type="String">gabrielpasadas22@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Gonçalo dos Santos</Data></Cell>
+			<Cell><Data ss:Type="String">goncalofss2004@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Hélio de Jesus</Data></Cell>
+			<Cell><Data ss:Type="String">helio.saonicolau@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Hélio livramento </Data></Cell>
+			<Cell><Data ss:Type="String">livramentohugo9@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Hélio Livramento </Data></Cell>
+			<Cell><Data ss:Type="String">Epidodiokingkonghomemaranha@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Hélio livramento </Data></Cell>
+			<Cell><Data ss:Type="String">episodiokingkonghomemaranha@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Igreja de São Nicolau</Data></Cell>
+			<Cell><Data ss:Type="String">retratospsn@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Irmã Maria</Data></Cell>
+			<Cell><Data ss:Type="String">riamenssps@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">José Manuel Pimenta</Data></Cell>
+			<Cell><Data ss:Type="String">mesosfera.caril_03@icloud.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">José Maria Katiavala </Data></Cell>
+			<Cell><Data ss:Type="String">josekatiavala515@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Luis Fernandes</Data></Cell>
+			<Cell><Data ss:Type="String">luisalbertofernandes1305@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Martim Pires Trigo</Data></Cell>
+			<Cell><Data ss:Type="String">martimtrigo19@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Matej Palider</Data></Cell>
+			<Cell><Data ss:Type="String">matej.palider@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Onélio Mateus</Data></Cell>
+			<Cell><Data ss:Type="String">onelioeri@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Padre Hugo Santos</Data></Cell>
+			<Cell><Data ss:Type="String">otaolagery@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Padre Hugo Santos</Data></Cell>
+			<Cell><Data ss:Type="String">prounitate@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Paulo Jorge Gomes Garcia</Data></Cell>
+			<Cell><Data ss:Type="String">paulojorgepjotta11@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Paulo Miguel Gomes Garcia </Data></Cell>
+			<Cell><Data ss:Type="String">canaldopamy@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Pe Henrique Mutali </Data></Cell>
+			<Cell><Data ss:Type="String">hrsmutali55@hotmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Pe João Dumba</Data></Cell>
+			<Cell><Data ss:Type="String">mwenhondumba@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String">351920124925</Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Pe Júnias Profilio </Data></Cell>
+			<Cell><Data ss:Type="String">profilio50@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Pe Mário Rui</Data></Cell>
+			<Cell><Data ss:Type="String">pmariorui@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Pe:Shijo Jose</Data></Cell>
+			<Cell><Data ss:Type="String">shijocmi@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Pedro Ferreira </Data></Cell>
+			<Cell><Data ss:Type="String">pmsf16@hotmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Samuel Santos</Data></Cell>
+			<Cell><Data ss:Type="String">samsantos169@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Sebastián Astudillo </Data></Cell>
+			<Cell><Data ss:Type="String">sebastianastudillho@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Sidney Ângelo </Data></Cell>
+			<Cell><Data ss:Type="String">megascopio-pinguim-03@icloud.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Sidney Angelo</Data></Cell>
+			<Cell><Data ss:Type="String">sidneysipopieny@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Sidney Do Amaral </Data></Cell>
+			<Cell><Data ss:Type="String">sidney.sipopiney11@icloud.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Silton Armindo </Data></Cell>
+			<Cell><Data ss:Type="String">siltonarmindougembe@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String">351935264944</Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Silton Armindo Ugembe </Data></Cell>
+			<Cell><Data ss:Type="String">armindougembesilton@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Sílvio Do Amaral</Data></Cell>
+			<Cell><Data ss:Type="String">silviotchivinda3@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Tiago Borges</Data></Cell>
+			<Cell><Data ss:Type="String">Tfanhaborges@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Valério da Silva </Data></Cell>
+			<Cell><Data ss:Type="String">valeriodasilva933@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Vitor Tessari</Data></Cell>
+			<Cell><Data ss:Type="String">vitortteixeira.13@gnail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Vitor Tessari</Data></Cell>
+			<Cell><Data ss:Type="String">vitor.ministrybrasil@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>
+		<Row>
+			<Cell><Data ss:Type="String">Willian Semedo</Data></Cell>
+			<Cell><Data ss:Type="String">williamsemedo13@gmail.com</Data></Cell>
+			<Cell><Data ss:Type="String"></Data></Cell>
+		</Row>	</Table>
+</Worksheet>
+</Workbook>
