@@ -201,7 +201,10 @@ function notificarAtividades() {
     global $logfile, $conn;
 
     $hoje    = date('Y-m-d');
-    $agora   = date('H:i:s');
+    // Janela: 10 min para trás (intervalo do scheduler) até +30 min à frente.
+    // Garante que uma atividade não é perdida mesmo que o scheduler tenha
+    // disparado ligeiramente depois da hora de início.
+    $horaMin = date('H:i:s', strtotime('-10 minutes'));
     $horaMax = date('H:i:s', strtotime('+30 minutes'));
 
     $stmt = $conn->prepare("
@@ -215,7 +218,7 @@ function notificarAtividades() {
           AND TIME(a.hora_inicio) BETWEEN ? AND ?
           AND a.ultima_notificacao IS NULL
     ");
-    $stmt->bind_param("sss", $hoje, $agora, $horaMax);
+    $stmt->bind_param("sss", $hoje, $horaMin, $horaMax);
     $stmt->execute();
     $atividades = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
