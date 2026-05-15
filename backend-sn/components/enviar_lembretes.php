@@ -17,24 +17,78 @@ $conn->set_charset("utf8mb4");
 $logfile   = __DIR__ . '/enviar_lembretes_cron.log';
 $timestamp = date('Y-m-d H:i:s');
 
-file_put_contents($logfile, "--- Script iniciado em $timestamp ---\n", FILE_APPEND);
-echo "[LOG] Script iniciado em $timestamp\n";
+function logMsg($msg) {
+    global $logfile;
+    file_put_contents($logfile, $msg . "\n", FILE_APPEND);
+    echo $msg . "\n";
+}
+
+logMsg("--- Script iniciado em $timestamp ---");
 
 // ---------------------------------------------------------------------------
-// Lembrete semanal de inscrição (2ª-feira 13:10 e 5ª-feira 21:30)
+// Cria a tabela de idempotência se não existir
+// ---------------------------------------------------------------------------
+function criarTabelaLembretesEnviados($conn) {
+    $conn->query("CREATE TABLE IF NOT EXISTS lembretes_enviados (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        data DATE NOT NULL,
+        tipo VARCHAR(30) NOT NULL,
+        enviado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_data_tipo (data, tipo)
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+}
+
+/**
+ * Verifica se um lembrete do tipo $tipo já foi enviado hoje.
+ * Regista-o atomicamente para evitar duplicados em execuções simultâneas.
+ * Retorna true se acabou de registar (deve prosseguir), false se já existia.
+ */
+function marcarComoEnviado($conn, $tipo) {
+    $hoje = date('Y-m-d');
+    $stmt = $conn->prepare(
+        "INSERT IGNORE INTO lembretes_enviados (data, tipo) VALUES (?, ?)"
+    );
+    $stmt->bind_param("ss", $hoje, $tipo);
+    $stmt->execute();
+    return $stmt->affected_rows > 0;
+}
+
+// ---------------------------------------------------------------------------
+// Lembrete semanal de inscrição (2ª-feira ~13:10 e 5ª-feira ~21:30)
 // ---------------------------------------------------------------------------
 function enviarLembreteInscricao() {
-    global $logfile, $conn;
+    global $conn;
 
-    $diaSemana  = date('N');
-    $horaMinuto = date('H:i');
+    criarTabelaLembretesEnviados($conn);
 
-    $isSegundaManha = ($diaSemana == 1 && $horaMinuto === '13:10');
-    $isQuintaNoite  = ($diaSemana == 4 && $horaMinuto === '21:30');
+    $diaSemana = (int) date('N');
+    $agora     = time();
 
-    if (!$isSegundaManha && !$isQuintaNoite) return;
+    // Verifica se estamos dentro de ±10 min do horário configurado
+    $janelas = [
+        ['dia' => 1, 'hora' => '13:10', 'tipo' => 'inscricao_segunda'],
+        ['dia' => 4, 'hora' => '21:30', 'tipo' => 'inscricao_quinta'],
+    ];
 
-    echo "[LOG] Iniciando lembrete de INSCRIÇÃO semanal...\n";
+    $tipoAtivo = null;
+    foreach ($janelas as $j) {
+        if ($diaSemana !== $j['dia']) continue;
+        $alvo = strtotime('today ' . $j['hora']);
+        if (abs($agora - $alvo) <= 600) {
+            $tipoAtivo = $j['tipo'];
+            break;
+        }
+    }
+
+    if ($tipoAtivo === null) return;
+
+    // Idempotência: garante envio único mesmo que o cron dispare várias vezes
+    if (!marcarComoEnviado($conn, $tipoAtivo)) {
+        logMsg("[Inscrição] Lembrete '$tipoAtivo' já enviado hoje. A saltar.");
+        return;
+    }
+
+    logMsg("[LOG] Iniciando lembrete de INSCRIÇÃO semanal ($tipoAtivo)...");
 
     $link    = "https://snref-fronten-8dbe187fda6c.herokuapp.com/";
     $assunto = "Recordatório: Inscrição para Refeições";
@@ -44,29 +98,26 @@ function enviarLembreteInscricao() {
 
     if ($res) {
         while ($user = $res->fetch_assoc()) {
-            $nome  = trim($user['name']);
-            $msg   = "Olá, $nome! Recorda-te de fazer a tua inscrição para as próximas refeições. Clica aqui: $link";
+            $nome = trim($user['name']);
+            $msg  = "Olá, $nome! Recorda-te de fazer a tua inscrição para as próximas refeições. Clica aqui: $link";
 
-            // WhatsApp
             if (!empty($user['whatsapp'])) {
                 $ok = sendWhatsApp($user['whatsapp'], $msg);
-                file_put_contents($logfile, "[Inscrição WA] " . ($ok ? "OK" : "FALHA") . ": $nome\n", FILE_APPEND);
+                logMsg("[Inscrição WA] " . ($ok ? "OK" : "FALHA") . ": $nome");
             }
 
-            // Email
             if (!empty($user['email'])) {
                 $bodyHtml = "Olá, <strong>$nome</strong>!<br><br>
                              Recorda-te de fazer a tua inscrição para as próximas refeições.<br>
                              <a href='$link'>Clica aqui para te inscrever</a>";
                 $ok = sendEmail($user['email'], $assunto, $bodyHtml, true);
-                file_put_contents($logfile, "[Inscrição Email] " . ($ok ? "OK" : "FALHA") . ": $nome\n", FILE_APPEND);
+                logMsg("[Inscrição Email] " . ($ok ? "OK" : "FALHA") . ": $nome");
             }
 
             usleep(200000);
         }
     }
 
-    // Push notification para todos os subscritores
     sendPushNotification(
         $conn,
         'Inscrição para Refeições',
@@ -78,34 +129,47 @@ function enviarLembreteInscricao() {
         'high'
     );
 
-    file_put_contents($logfile, "[Inscrição Push] Enviado para todos os subscritores.\n", FILE_APPEND);
+    logMsg("[Inscrição Push] Enviado para todos os subscritores.");
 }
 
 // ---------------------------------------------------------------------------
-// Lembrete diário de refeições (almoço 13:20, jantar 19:50)
+// Lembrete diário de refeições (almoço ~13:20, jantar ~19:50)
 // ---------------------------------------------------------------------------
 function enviarLembretes() {
-    global $logfile, $conn;
+    global $conn;
 
+    criarTabelaLembretesEnviados($conn);
+
+    // Hora da refeição => calcular hora de envio (10 min antes)
     $horarios = [
         'almoco' => '13:30',
         'jantar' => '20:00',
     ];
 
-    $dataHoje = date('Y-m-d');
+    $agora     = time();
+    $dataHoje  = date('Y-m-d');
     $horaAgora = date('H:i');
 
     foreach ($horarios as $tipo => $horaRefeicao) {
-        $horaEnvio = date('H:i', strtotime($horaRefeicao) - 10 * 60);
+        // Hora de envio = 10 minutos antes da refeição
+        $horaEnvio   = date('H:i', strtotime($horaRefeicao) - 10 * 60);
+        $horaEnvioTs = strtotime("today $horaEnvio");
 
-        if ($horaAgora !== $horaEnvio) {
-            echo "[DEBUG] Hora atual ($horaAgora) não coincide com hora de envio ($horaEnvio) para $tipo.\n";
+        // Janela de ±10 minutos: cobre jitter do Heroku Scheduler
+        if (abs($agora - $horaEnvioTs) > 600) {
+            logMsg("[DEBUG] Hora actual ($horaAgora) fora da janela de envio ($horaEnvio ±10 min) para $tipo. A saltar.");
             continue;
         }
 
-        echo "[LOG] Processando envios para $tipo...\n";
+        // Idempotência: garante que, mesmo dentro da janela, só envia uma vez por dia
+        if (!marcarComoEnviado($conn, $tipo)) {
+            logMsg("[DEBUG] Lembrete '$tipo' já enviado hoje. A saltar duplicado.");
+            continue;
+        }
 
-        // Buscar utilizadores aprovados
+        logMsg("[LOG] Processando envios para $tipo (hora: $horaAgora, alvo: $horaEnvio)...");
+
+        // Utilizadores aprovados
         $usuarios = [];
         $sqlU = "SELECT id, name, whatsapp, email FROM usuarios WHERE status = 'aprovado'";
         $resU = $conn->query($sqlU);
@@ -114,8 +178,9 @@ function enviarLembretes() {
                 $usuarios[] = $row;
             }
         }
+        logMsg("[LOG] Utilizadores encontrados: " . count($usuarios));
 
-        // Buscar inscritos para hoje
+        // Inscritos para hoje
         $inscritos = [];
         $sqlI = "SELECT nome_completo FROM refeicoes WHERE data = '$dataHoje' AND $tipo = '1'";
         $resI = $conn->query($sqlI);
@@ -124,16 +189,17 @@ function enviarLembretes() {
                 $inscritos[] = mb_strtolower(trim($row['nome_completo']), 'UTF-8');
             }
         }
+        logMsg("[LOG] Inscritos para $tipo: " . count($inscritos));
 
-        $tipoLabel  = $tipo === 'almoco' ? 'almoço' : 'jantar';
-        $assunto    = ucfirst($tipoLabel) . " de hoje — " . date('d/m/Y');
+        $tipoLabel       = $tipo === 'almoco' ? 'almoço' : 'jantar';
+        $assunto         = ucfirst($tipoLabel) . " de hoje — " . date('d/m/Y');
         $inscritosIds    = [];
         $naoInscritosIds = [];
 
         foreach ($usuarios as $user) {
-            $nomeOriginal  = trim($user['name']);
-            $nomeComp      = mb_strtolower($nomeOriginal, 'UTF-8');
-            $estaInscrito  = in_array($nomeComp, $inscritos);
+            $nomeOriginal = trim($user['name']);
+            $nomeComp     = mb_strtolower($nomeOriginal, 'UTF-8');
+            $estaInscrito = in_array($nomeComp, $inscritos);
 
             if ($estaInscrito) {
                 $msgWa   = "Olá, $nomeOriginal! Não te esqueças que estás inscrito para o $tipoLabel de hoje. Bom apetite!";
@@ -145,18 +211,16 @@ function enviarLembretes() {
                 $naoInscritosIds[] = $user['id'];
             }
 
-            // WhatsApp
             if (!empty($user['whatsapp'])) {
-                $ok = sendWhatsApp($user['whatsapp'], $msgWa);
+                $ok     = sendWhatsApp($user['whatsapp'], $msgWa);
                 $status = $ok ? "OK" : "FALHA";
-                file_put_contents($logfile, "[$status] WA $tipo: $nomeOriginal\n", FILE_APPEND);
+                logMsg("[$status] WA $tipo: $nomeOriginal");
             }
 
-            // Email
             if (!empty($user['email'])) {
-                $ok = sendEmail($user['email'], $assunto, $msgHtml, true);
+                $ok     = sendEmail($user['email'], $assunto, $msgHtml, true);
                 $status = $ok ? "OK" : "FALHA";
-                file_put_contents($logfile, "[$status] Email $tipo: $nomeOriginal\n", FILE_APPEND);
+                logMsg("[$status] Email $tipo: $nomeOriginal");
             }
 
             usleep(500000);
@@ -190,7 +254,7 @@ function enviarLembretes() {
             );
         }
 
-        file_put_contents($logfile, "[Push $tipo] Inscritos: " . count($inscritosIds) . " | Não inscritos: " . count($naoInscritosIds) . "\n", FILE_APPEND);
+        logMsg("[Push $tipo] Inscritos: " . count($inscritosIds) . " | Não inscritos: " . count($naoInscritosIds));
     }
 }
 
@@ -198,12 +262,9 @@ function enviarLembretes() {
 // Notificações de atividades pessoais (próximos 30 minutos)
 // ---------------------------------------------------------------------------
 function notificarAtividades() {
-    global $logfile, $conn;
+    global $conn;
 
     $hoje    = date('Y-m-d');
-    // Janela: 10 min para trás (intervalo do scheduler) até +30 min à frente.
-    // Garante que uma atividade não é perdida mesmo que o scheduler tenha
-    // disparado ligeiramente depois da hora de início.
     $horaMin = date('H:i:s', strtotime('-10 minutes'));
     $horaMax = date('H:i:s', strtotime('+30 minutes'));
 
@@ -223,7 +284,7 @@ function notificarAtividades() {
     $atividades = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
     if (empty($atividades)) {
-        file_put_contents($logfile, "[Atividades] Nenhuma atividade para notificar agora.\n", FILE_APPEND);
+        logMsg("[Atividades] Nenhuma atividade para notificar agora.");
         return;
     }
 
@@ -236,19 +297,16 @@ function notificarAtividades() {
         $msgHtml = "Olá, <strong>$nome</strong>!<br><br><strong>$titulo</strong> começa às <strong>$hora</strong>. Não te esqueças!";
         $assunto = "Lembrete — $titulo às $hora";
 
-        // WhatsApp
         if (!empty($atv['whatsapp'])) {
             $ok = sendWhatsApp($atv['whatsapp'], $msgWa);
-            file_put_contents($logfile, "[Atividade WA " . ($ok ? "OK" : "FALHA") . "] User {$atv['user_id']}: $titulo às $hora\n", FILE_APPEND);
+            logMsg("[Atividade WA " . ($ok ? "OK" : "FALHA") . "] User {$atv['user_id']}: $titulo às $hora");
         }
 
-        // Email
         if (!empty($atv['email'])) {
             $ok = sendEmail($atv['email'], $assunto, $msgHtml, true);
-            file_put_contents($logfile, "[Atividade Email " . ($ok ? "OK" : "FALHA") . "] User {$atv['user_id']}: $titulo às $hora\n", FILE_APPEND);
+            logMsg("[Atividade Email " . ($ok ? "OK" : "FALHA") . "] User {$atv['user_id']}: $titulo às $hora");
         }
 
-        // Push
         sendPushNotification(
             $conn,
             "Lembrete — $titulo",
@@ -264,7 +322,7 @@ function notificarAtividades() {
         $upd->bind_param("i", $atv['id']);
         $upd->execute();
 
-        file_put_contents($logfile, "[Atividade Push OK] User {$atv['user_id']}: $titulo às $hora\n", FILE_APPEND);
+        logMsg("[Atividade Push OK] User {$atv['user_id']}: $titulo às $hora");
     }
 }
 
@@ -275,5 +333,4 @@ enviarLembreteInscricao();
 enviarLembretes();
 notificarAtividades();
 
-echo "[LOG] Script finalizado.\n";
-file_put_contents($logfile, "--- Script finalizado em " . date('Y-m-d H:i:s') . " ---\n\n", FILE_APPEND);
+logMsg("--- Script finalizado em " . date('Y-m-d H:i:s') . " ---\n");

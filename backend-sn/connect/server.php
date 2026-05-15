@@ -21,16 +21,20 @@ $mailUsername = getenv('MAIL_USERNAME') ?: ($_ENV['MAIL_USERNAME'] ?? ($_SERVER[
 $mailPassword = getenv('MAIL_PASSWORD') ?: ($_ENV['MAIL_PASSWORD'] ?? ($_SERVER['MAIL_PASSWORD'] ?? null));
 
 if (!$dbUrl) {
-    http_response_code(503);
-    die(json_encode(['error' => 'A variável DB_URL não foi carregada.']));
+    $msg = 'FATAL: A variável DB_URL não foi carregada.';
+    error_log($msg);
+    if (php_sapi_name() !== 'cli') { http_response_code(503); }
+    die(php_sapi_name() === 'cli' ? $msg . "\n" : json_encode(['error' => $msg]));
 }
 
 // Processar a URL de conexão ao banco de dados
 $url = parse_url($dbUrl);
 
 if (!isset($url["host"], $url["user"], $url["pass"], $url["path"])) {
-    http_response_code(503);
-    die(json_encode(['error' => 'URL de conexão ao banco está incompleta.']));
+    $msg = 'FATAL: URL de conexão ao banco está incompleta.';
+    error_log($msg);
+    if (php_sapi_name() !== 'cli') { http_response_code(503); }
+    die(php_sapi_name() === 'cli' ? $msg . "\n" : json_encode(['error' => $msg]));
 }
 
 $host = $url["host"];
@@ -47,12 +51,16 @@ define('DB_NAME', $db);
 try {
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
     if ($conn->connect_error) {
-        http_response_code(503);
-        die(json_encode(['error' => 'Erro na conexão: ' . $conn->connect_error]));
+        $msg = 'FATAL: Erro na conexão à BD: ' . $conn->connect_error;
+        error_log($msg);
+        if (php_sapi_name() !== 'cli') { http_response_code(503); }
+        die(php_sapi_name() === 'cli' ? $msg . "\n" : json_encode(['error' => $msg]));
     }
 } catch (Exception $e) {
-    http_response_code(503);
-    die(json_encode(['error' => 'Erro ao conectar: ' . $e->getMessage()]));
+    $msg = 'FATAL: Erro ao conectar à BD: ' . $e->getMessage();
+    error_log($msg);
+    if (php_sapi_name() !== 'cli') { http_response_code(503); }
+    die(php_sapi_name() === 'cli' ? $msg . "\n" : json_encode(['error' => $msg]));
 }
 
 ?>
