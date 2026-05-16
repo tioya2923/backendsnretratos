@@ -206,8 +206,8 @@ function enviarLembretes() {
                 $msgHtml = "Olá, <strong>$nomeOriginal</strong>!<br><br>Não te esqueças que estás inscrito para o <strong>$tipoLabel</strong> de hoje.<br>Bom apetite! 🍽️";
                 $inscritosIds[] = $user['id'];
             } else {
-                $msgWa   = "Olá, $nomeOriginal. Informamos que não constás na lista de inscritos para o $tipoLabel de hoje.";
-                $msgHtml = "Olá, <strong>$nomeOriginal</strong>.<br><br>Informamos que não constás na lista de inscritos para o <strong>$tipoLabel</strong> de hoje.";
+                $msgWa   = "Olá, $nomeOriginal. Informamos que não te inscreveste para o $tipoLabel de hoje.";
+                $msgHtml = "Olá, <strong>$nomeOriginal</strong>.<br><br>Informamos que não te inscreveste para o <strong>$tipoLabel</strong> de hoje.";
                 $naoInscritosIds[] = $user['id'];
             }
 
