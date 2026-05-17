@@ -180,9 +180,9 @@ function enviarLembretes() {
         }
         logMsg("[LOG] Utilizadores encontrados: " . count($usuarios));
 
-        // Inscritos para hoje
+        // Inscritos para hoje (aceita '1' e 'Sim' para compatibilidade com registos antigos)
         $inscritos = [];
-        $sqlI = "SELECT nome_completo FROM refeicoes WHERE data = '$dataHoje' AND $tipo = '1'";
+        $sqlI = "SELECT nome_completo FROM refeicoes WHERE data = '$dataHoje' AND $tipo IN ('1', 'Sim')";
         $resI = $conn->query($sqlI);
         if ($resI) {
             while ($row = $resI->fetch_assoc()) {

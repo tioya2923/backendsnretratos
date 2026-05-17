@@ -43,7 +43,7 @@ function enviarLembretes() {
 
         // Buscar inscrições para a refeição do dia
         $inscritos = [];
-        $sqlInscritos = "SELECT nome_completo FROM refeicoes WHERE data = '$dataHoje' AND $tipo = '1'";
+        $sqlInscritos = "SELECT nome_completo FROM refeicoes WHERE data = '$dataHoje' AND $tipo IN ('1', 'Sim')";
         $resInscritos = $conn->query($sqlInscritos);
         while ($row = $resInscritos->fetch_assoc()) {
             $inscritos[] = $row['nome_completo'];
