@@ -6,7 +6,6 @@ $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
 $permitida = (
     $origin === 'http://localhost:3000' ||
-    str_ends_with($origin, '.herokuapp.com') ||
     str_ends_with($origin, '.onrender.com') ||
     str_ends_with($origin, '.snrefeicoes.pt') ||
     $origin === 'https://snrefeicoes.pt'

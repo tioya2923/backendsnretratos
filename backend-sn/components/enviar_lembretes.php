@@ -90,7 +90,7 @@ function enviarLembreteInscricao() {
 
     logMsg("[LOG] Iniciando lembrete de INSCRIÇÃO semanal ($tipoAtivo)...");
 
-    $link    = "https://snref-fronten-8dbe187fda6c.herokuapp.com/";
+    $link    = rtrim(getenv('FRONTEND_URL') ?: '', '/') . '/';
     $assunto = "Recordatório: Inscrição para Refeições";
 
     $sql = "SELECT name, whatsapp, email FROM usuarios WHERE status = 'aprovado'";

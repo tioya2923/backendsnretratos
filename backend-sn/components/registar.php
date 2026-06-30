@@ -86,7 +86,8 @@ $stmt->close();
 
 // -------------------- INSERIR UTILIZADOR --------------------
 $approvalCode = bin2hex(random_bytes(16));
-$approvalUrl = "https://snref-backend-8d85ffa999cd.herokuapp.com/components/linkAprovacao.php?code=$approvalCode";
+$backendUrl = rtrim(getenv('BACKEND_URL') ?: '', '/');
+$approvalUrl = "$backendUrl/components/linkAprovacao.php?code=$approvalCode";
 
 $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
