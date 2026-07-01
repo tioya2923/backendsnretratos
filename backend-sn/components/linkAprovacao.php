@@ -9,6 +9,10 @@ require_once __DIR__ . '/whatsapp_utils.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+// cors.php define Content-Type: application/json por omissão — esta página
+// devolve HTML, por isso tem de substituir esse header.
+header('Content-Type: text/html; charset=UTF-8');
+
 $frontendUrl = rtrim(getenv('FRONTEND_URL') ?: '', '/');
 
 function renderPage(bool $success, string $title, string $message, ?string $loginUrl = null): void {
