@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /var/www/html
 COPY --from=vendor /app /var/www/html
+RUN chown -R www-data:www-data /var/www/html
 
 COPY docker/000-default.conf /etc/apache2/sites-available/000-default.conf
 COPY docker/start.sh /usr/local/bin/start.sh
