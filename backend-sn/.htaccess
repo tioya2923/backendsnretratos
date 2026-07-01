@@ -1,4 +1,10 @@
 RewriteEngine On
+
+# Garante que o header Authorization chega ao PHP mesmo que CGIPassAuth
+# não esteja disponível/ativo (fallback universal via mod_rewrite).
+RewriteCond %{HTTP:Authorization} ^(.+)$
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [L]
