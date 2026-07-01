@@ -279,9 +279,12 @@ if ($method === 'DELETE') {
         echo json_encode(['error' => 'ID obrigatório']);
         exit;
     }
-    // Permite eliminar se for o remetente OU o destinatário específico
+    // Permite eliminar se for o remetente, o destinatário específico, ou se for
+    // uma mensagem automática do sistema (remetente_id NULL, ex: aviso de
+    // aniversário) — estas não têm "dono", por isso qualquer destinatário
+    // autenticado pode eliminá-la da caixa de entrada de todos.
     $stmt = $conn->prepare(
-        "DELETE FROM mensagens WHERE id = ? AND (remetente_id = ? OR destinatario_id = ?)"
+        "DELETE FROM mensagens WHERE id = ? AND (remetente_id = ? OR destinatario_id = ? OR remetente_id IS NULL)"
     );
     $stmt->bind_param("iii", $id, $userId, $userId);
     $stmt->execute();
