@@ -1,4 +1,3 @@
-
 <?php
 require 'cors.php'; // Habilita o CORS
 require_once __DIR__ . '/../../vendor/autoload.php';

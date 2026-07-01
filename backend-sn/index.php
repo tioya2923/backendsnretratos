@@ -1,11 +1,11 @@
-
-Página para a Comunidade Paroquial de São Nicolau: REFEIÇÕES.
 <?php
 // Roteador simples para /api/unsubscribe
 if (preg_match('#^/api/unsubscribe$#', $_SERVER['REQUEST_URI'])) {
 	require_once __DIR__ . '/components/unsubscribe.php';
 	exit();
 }
+
+echo 'Página para a Comunidade Paroquial de São Nicolau: REFEIÇÕES.';
 /*
 require 'vendor/autoload.php';
 
