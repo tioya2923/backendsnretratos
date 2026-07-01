@@ -134,6 +134,7 @@ try {
     $mail->Password = getenv('MAIL_PASSWORD');
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
     $mail->Port = 465;
+    $mail->CharSet = 'UTF-8';
 
     $mail->setFrom('retratospsn@gmail.com', 'Paróquia de São Nicolau');
     $mail->addAddress($userEmail);

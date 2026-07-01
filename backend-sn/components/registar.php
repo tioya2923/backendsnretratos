@@ -153,6 +153,7 @@ try {
     $mail->Password = $mailPass;
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
     $mail->Port = 465;
+    $mail->CharSet = 'UTF-8';
 
     $mail->setFrom($mailUser, 'Paróquia de São Nicolau');
     $mail->addAddress('retratospsn@gmail.com');
@@ -180,6 +181,7 @@ try {
     $userMail->Password = $mailPass;
     $userMail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
     $userMail->Port = 465;
+    $userMail->CharSet = 'UTF-8';
 
     $userMail->setFrom($mailUser, 'Paróquia de São Nicolau');
     $userMail->addAddress($email);
