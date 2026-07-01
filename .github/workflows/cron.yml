@@ -1,0 +1,19 @@
+name: Cron - Lembretes e Aniversários
+
+on:
+  schedule:
+    # A cada 5 minutos. O próprio enviar_lembretes.php decide, internamente,
+    # se está dentro da janela horária certa (±10 min) para cada tipo de
+    # lembrete — este workflow só precisa de "bater à porta" com frequência.
+    - cron: '*/5 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chamar enviar_lembretes.php no backend
+        run: |
+          curl --fail --silent --show-error \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            https://snretratos-backend.onrender.com/components/enviar_lembretes.php

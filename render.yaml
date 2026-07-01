@@ -32,3 +32,5 @@ services:
         value: https://snretratos-backend.onrender.com
       - key: FRONTEND_URL
         value: https://frontendsnretratos.onrender.com
+      - key: CRON_SECRET
+        sync: false

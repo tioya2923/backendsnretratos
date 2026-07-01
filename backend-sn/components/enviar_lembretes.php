@@ -12,6 +12,16 @@ require_once __DIR__ . '/whatsapp_utils.php';
 require_once __DIR__ . '/email_utils.php';
 require_once __DIR__ . '/push_utils.php';
 
+// Só aceita chamadas do disparador de cron (evita que qualquer pessoa na
+// internet dispare envios em massa de WhatsApp/email a todos os utilizadores).
+$cronSecret = getenv('CRON_SECRET');
+$recebido   = $_SERVER['HTTP_X_CRON_SECRET'] ?? '';
+if (php_sapi_name() !== 'cli' && (!$cronSecret || !hash_equals($cronSecret, $recebido))) {
+    http_response_code(403);
+    echo json_encode(['error' => 'Acesso negado']);
+    exit;
+}
+
 $conn->set_charset("utf8mb4");
 
 $logfile   = __DIR__ . '/enviar_lembretes_cron.log';
