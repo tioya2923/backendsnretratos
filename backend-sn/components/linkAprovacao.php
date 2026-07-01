@@ -4,6 +4,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/../connect/cors.php';
+require_once __DIR__ . '/whatsapp_utils.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -105,6 +106,7 @@ if ($result->num_rows === 0) {
 
 $user = $result->fetch_assoc();
 $userEmail = $user['email'];
+$userWhatsapp = $user['whatsapp'] ?? '';
 
 $sqlUpdate = "UPDATE usuarios SET status = 'aprovado' WHERE approval_code = ?";
 $stmtUpdate = $conn->prepare($sqlUpdate);
@@ -140,6 +142,14 @@ try {
     $mail->send();
 } catch (Exception $e) {
     error_log('Erro ao enviar email de aprovação: ' . $mail->ErrorInfo);
+}
+
+if (!empty($userWhatsapp)) {
+    try {
+        sendWhatsApp($userWhatsapp, "A sua conta foi aprovada! Já pode iniciar sessão: $loginUrl");
+    } catch (\Throwable $e) {
+        error_log('Erro ao enviar WhatsApp de aprovação: ' . $e->getMessage());
+    }
 }
 
 renderPage(true, 'Registo aprovado!', 'A conta foi aprovada com sucesso. Já pode iniciar sessão na aplicação.', $loginUrl);
