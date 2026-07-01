@@ -465,7 +465,7 @@ function notificarAniversarios() {
     foreach ($paraAvisar as $av) {
         $tipoLabel = $av['tipo'] === 'natalicio' ? 'Natalício' : 'Sacerdotal';
         $titulo    = "Aniversariante do Dia: {$av['nome']}";
-        $msg       = "$titulo\n\nHoje é aniversário {$tipoLabel} de {$av['nome']}. Vamos todos parabenizá-lo(a)!";
+        $msg       = "$titulo\n\nHoje é aniversário {$tipoLabel} de {$av['nome']}. Vamos todos parabenizá-lo!";
         $assunto   = $titulo;
 
         foreach ($usuarios as $destinatario) {
@@ -477,7 +477,7 @@ function notificarAniversarios() {
             }
 
             if (!empty($destinatario['email'])) {
-                $bodyHtml = "<p><strong>$titulo</strong></p><p>Hoje é aniversário {$tipoLabel} de <strong>{$av['nome']}</strong>. Vamos todos parabenizá-lo(a)!</p>";
+                $bodyHtml = "<p><strong>$titulo</strong></p><p>Hoje é aniversário {$tipoLabel} de <strong>{$av['nome']}</strong>. Vamos todos parabenizá-lo!</p>";
                 $ok = sendEmail($destinatario['email'], $assunto, $bodyHtml, true);
                 logMsg("[Aniversário Email " . ($ok ? "OK" : "FALHA") . "] $tipoLabel {$av['nome']} -> $nomeDest");
             }
@@ -496,7 +496,7 @@ function notificarAniversarios() {
         sendPushNotification(
             $conn,
             $titulo,
-            "Hoje é aniversário {$tipoLabel} de {$av['nome']}. Vamos todos parabenizá-lo(a)!",
+            "Hoje é aniversário {$tipoLabel} de {$av['nome']}. Vamos todos parabenizá-lo!",
             '/',
             [],
             'psn-aniversario',
