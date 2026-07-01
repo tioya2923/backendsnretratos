@@ -5,6 +5,8 @@ require_once '../connect/cors.php';
 require_once '../connect/auth.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/push_utils.php';
+require_once __DIR__ . '/email_utils.php';
+require_once __DIR__ . '/whatsapp_utils.php';
 
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
@@ -189,24 +191,40 @@ if ($method === 'POST') {
 
     echo json_encode(['success' => true]);
 
-    // Send push notification to recipients (after response is sent, non-blocking)
-    $notifBody    = mb_strlen($corpo) > 100 ? mb_substr($corpo, 0, 97) . '…' : $corpo;
-    $notifUserIds = $pushToAll ? [] : $pushUserIds; // empty = all subscribers except sender handled below
+    // Notificar destinatários (push + email + WhatsApp), após responder ao pedido
+    $notifBody = mb_strlen($corpo) > 100 ? mb_substr($corpo, 0, 97) . '…' : $corpo;
+
+    // Título/corpo distinguem claramente mensagem para todos de mensagem pessoal
+    $pushTitulo = $pushToAll ? "$senderName · mensagem para todos" : "$senderName · nova mensagem";
+    $assunto    = $pushToAll
+        ? "Nova mensagem de $senderName para toda a comunidade"
+        : "Nova mensagem de $senderName";
+    $rotulo     = $pushToAll ? 'enviou uma mensagem para toda a comunidade' : 'enviou-te uma mensagem';
+
+    $notifUsuarios = [];
     if ($pushToAll) {
-        // All users except sender
-        $allUsersStmt = $conn->prepare("SELECT id FROM usuarios WHERE id != ?");
+        // Todos os utilizadores aprovados exceto o remetente
+        $allUsersStmt = $conn->prepare("SELECT id, name, whatsapp, email FROM usuarios WHERE id != ? AND status = 'aprovado'");
         $allUsersStmt->bind_param("i", $userId);
         $allUsersStmt->execute();
-        $allUsersResult = $allUsersStmt->get_result();
-        while ($u = $allUsersResult->fetch_assoc()) {
-            $notifUserIds[] = (int)$u['id'];
-        }
+        $notifUsuarios = $allUsersStmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $allUsersStmt->close();
+    } elseif (!empty($pushUserIds)) {
+        $placeholders = implode(',', array_fill(0, count($pushUserIds), '?'));
+        $typesStr     = str_repeat('i', count($pushUserIds));
+        $destStmt = $conn->prepare("SELECT id, name, whatsapp, email FROM usuarios WHERE id IN ($placeholders)");
+        $destStmt->bind_param($typesStr, ...$pushUserIds);
+        $destStmt->execute();
+        $notifUsuarios = $destStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $destStmt->close();
     }
+
+    $notifUserIds = array_map(fn($u) => (int) $u['id'], $notifUsuarios);
+
     if (!empty($notifUserIds)) {
         sendPushNotification(
             $conn,
-            $senderName,
+            $pushTitulo,
             $notifBody,
             '/mensagens',
             $notifUserIds,
@@ -214,6 +232,20 @@ if ($method === 'POST') {
             3600,
             'high'
         );
+    }
+
+    $link = rtrim(getenv('FRONTEND_URL') ?: '', '/') . '/mensagens';
+    foreach ($notifUsuarios as $u) {
+        $nomeDest = trim($u['name']);
+        $msgWa    = "Olá, $nomeDest! $senderName $rotulo: \"$notifBody\"\n\nVê aqui: $link";
+        $bodyHtml = "Olá, <strong>$nomeDest</strong>!<br><br><strong>$senderName</strong> $rotulo:<br><em>\"" . htmlspecialchars($notifBody) . "\"</em><br><br><a href='$link'>Vê a mensagem</a>";
+
+        if (!empty($u['whatsapp'])) {
+            sendWhatsApp($u['whatsapp'], $msgWa);
+        }
+        if (!empty($u['email'])) {
+            sendEmail($u['email'], $assunto, $bodyHtml, true);
+        }
     }
     exit;
 }

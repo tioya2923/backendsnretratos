@@ -500,11 +500,125 @@ function notificarAniversarios() {
 }
 
 // ---------------------------------------------------------------------------
+// Lembrete de mensagens por ler há mais de 24h (uma vez por mensagem/destinatário)
+// ---------------------------------------------------------------------------
+function criarTabelaMensagemLembretes($conn) {
+    $conn->query("CREATE TABLE IF NOT EXISTS mensagem_lembretes (
+        mensagem_id INT NOT NULL,
+        utilizador_id INT NOT NULL,
+        enviado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (mensagem_id, utilizador_id)
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+}
+
+/**
+ * Verifica se já foi enviado lembrete desta mensagem a este utilizador.
+ * Regista atomicamente para evitar duplicados em execuções simultâneas.
+ */
+function marcarLembreteMensagemEnviado($conn, $mensagemId, $userId) {
+    $stmt = $conn->prepare(
+        "INSERT IGNORE INTO mensagem_lembretes (mensagem_id, utilizador_id) VALUES (?, ?)"
+    );
+    $stmt->bind_param("ii", $mensagemId, $userId);
+    $stmt->execute();
+    return $stmt->affected_rows > 0;
+}
+
+function lembrarMensagensNaoLidas() {
+    global $conn;
+
+    criarTabelaMensagemLembretes($conn);
+
+    $link = rtrim(getenv('FRONTEND_URL') ?: '', '/') . '/mensagens';
+
+    $sql = "SELECT m.id, m.corpo, m.destinatario_id, m.remetente_id, u.name AS remetente_nome
+            FROM mensagens m
+            JOIN usuarios u ON u.id = m.remetente_id
+            WHERE m.created_at <= (NOW() - INTERVAL 24 HOUR)";
+    $res = $conn->query($sql);
+    $mensagens = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+
+    if (empty($mensagens)) {
+        logMsg("[Mensagens] Nenhuma mensagem com mais de 24h a verificar.");
+        return;
+    }
+
+    // Utilizadores aprovados, indexados por id (para resolver mensagens "para todos")
+    $todosUsuarios = [];
+    $resU = $conn->query("SELECT id, name, whatsapp, email FROM usuarios WHERE status = 'aprovado'");
+    if ($resU) {
+        while ($row = $resU->fetch_assoc()) {
+            $todosUsuarios[(int) $row['id']] = $row;
+        }
+    }
+
+    $enviados = 0;
+
+    foreach ($mensagens as $msg) {
+        $mensagemId    = (int) $msg['id'];
+        $remetenteId   = (int) $msg['remetente_id'];
+        $remetenteNome = trim($msg['remetente_nome']);
+        $corpoResumo   = mb_strlen($msg['corpo']) > 100 ? mb_substr($msg['corpo'], 0, 97) . '…' : $msg['corpo'];
+
+        $destinatarioIds = $msg['destinatario_id'] !== null
+            ? [(int) $msg['destinatario_id']]
+            : array_filter(array_keys($todosUsuarios), fn($id) => $id !== $remetenteId);
+
+        foreach ($destinatarioIds as $destId) {
+            if ($destId === $remetenteId || !isset($todosUsuarios[$destId])) continue;
+
+            $lidaStmt = $conn->prepare("SELECT 1 FROM mensagem_leituras WHERE mensagem_id = ? AND utilizador_id = ?");
+            $lidaStmt->bind_param("ii", $mensagemId, $destId);
+            $lidaStmt->execute();
+            $jaLida = $lidaStmt->get_result()->num_rows > 0;
+            $lidaStmt->close();
+            if ($jaLida) continue;
+
+            // Marca atomicamente — se já tinha sido lembrado, salta
+            if (!marcarLembreteMensagemEnviado($conn, $mensagemId, $destId)) continue;
+
+            $destinatario = $todosUsuarios[$destId];
+            $nomeDest     = trim($destinatario['name']);
+
+            $msgWa    = "Olá, $nomeDest! Ainda não leste a mensagem que $remetenteNome te enviou há mais de 24 horas: \"$corpoResumo\"\n\nVê aqui: $link";
+            $bodyHtml = "Olá, <strong>$nomeDest</strong>!<br><br>Ainda não leste a mensagem que <strong>$remetenteNome</strong> te enviou há mais de 24 horas:<br><em>\"" . htmlspecialchars($corpoResumo) . "\"</em><br><br><a href='$link'>Vê a mensagem</a>";
+
+            if (!empty($destinatario['whatsapp'])) {
+                $ok = sendWhatsApp($destinatario['whatsapp'], $msgWa);
+                logMsg("[Msg lembrete WA " . ($ok ? "OK" : "FALHA") . "] Msg $mensagemId -> $nomeDest");
+            }
+
+            if (!empty($destinatario['email'])) {
+                $ok = sendEmail($destinatario['email'], "Mensagem por ler de $remetenteNome", $bodyHtml, true);
+                logMsg("[Msg lembrete Email " . ($ok ? "OK" : "FALHA") . "] Msg $mensagemId -> $nomeDest");
+            }
+
+            sendPushNotification(
+                $conn,
+                'Mensagem por ler',
+                "$remetenteNome enviou-te uma mensagem há mais de 24h que ainda não leste.",
+                '/mensagens',
+                [$destId],
+                'psn-mensagem',
+                3600,
+                'high'
+            );
+
+            $enviados++;
+            usleep(150000);
+        }
+    }
+
+    logMsg("[Mensagens] Lembretes de mensagens não lidas enviados: $enviados");
+}
+
+// ---------------------------------------------------------------------------
 // Execução
 // ---------------------------------------------------------------------------
 enviarLembreteInscricao();
 enviarLembretes();
 notificarAtividades();
 notificarAniversarios();
+lembrarMensagensNaoLidas();
 
 logMsg("--- Script finalizado em " . date('Y-m-d H:i:s') . " ---\n");

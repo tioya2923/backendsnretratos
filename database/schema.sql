@@ -195,6 +195,13 @@ CREATE TABLE IF NOT EXISTS mensagem_leituras (
     PRIMARY KEY (mensagem_id, utilizador_id)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS mensagem_lembretes (
+    mensagem_id INT NOT NULL,
+    utilizador_id INT NOT NULL,
+    enviado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (mensagem_id, utilizador_id)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS lembretes_enviados (
     id INT AUTO_INCREMENT PRIMARY KEY,
     data DATE NOT NULL,
