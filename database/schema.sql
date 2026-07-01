@@ -86,24 +86,6 @@ CREATE TABLE IF NOT EXISTS horarios (
     INDEX idx_data (data)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ── Fotos / vídeos (metadados; ficheiros ficam no S3) ────────────────────
-
-CREATE TABLE IF NOT EXISTS pastas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    data_criacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS fotos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    arquivo VARCHAR(500) NOT NULL,
-    tipo VARCHAR(10) NOT NULL,
-    pasta_id INT NOT NULL,
-    data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_pasta (pasta_id),
-    CONSTRAINT fk_fotos_pasta FOREIGN KEY (pasta_id) REFERENCES pastas(id)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 -- ── Grupos e membros (nomes com maiúscula inicial — usados assim no código) ──
 
 CREATE TABLE IF NOT EXISTS Grupos (

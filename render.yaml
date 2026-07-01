@@ -24,10 +24,6 @@ services:
         sync: false
       - key: PUSH_ADMIN_SECRET
         sync: false
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
       - key: BACKEND_URL
         value: https://snretratos-backend.onrender.com
       - key: FRONTEND_URL
