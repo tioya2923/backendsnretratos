@@ -58,34 +58,6 @@ CREATE TABLE IF NOT EXISTS admins (
     UNIQUE KEY unique_email_admin (email_admin)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- ── Nomes (aniversários e confissões) ────────────────────────────────────
-
-CREATE TABLE IF NOT EXISTS nomes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome_completo VARCHAR(255) NOT NULL,
-    data_aniversario DATE DEFAULT NULL,
-    data_aniversario_sacerdotal DATE DEFAULT NULL,
-    UNIQUE KEY unique_nome_completo (nome_completo)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS nomes_predefinidos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    email VARCHAR(255) DEFAULT NULL,
-    UNIQUE KEY unique_nome (nome)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS horarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    dia_semana VARCHAR(20) NOT NULL,
-    horario_inicio VARCHAR(10) NOT NULL,
-    horario_fim VARCHAR(10) NOT NULL,
-    nome VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    data DATE NOT NULL,
-    INDEX idx_data (data)
-) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 -- ── Grupos e membros (nomes com maiúscula inicial — usados assim no código) ──
 
 CREATE TABLE IF NOT EXISTS Grupos (
