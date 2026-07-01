@@ -58,9 +58,33 @@ $password = $data['password'] ?? '';
 $whatsapp = preg_replace('/\D/', '', $data['whatsapp'] ?? '');
 $newRegistration = filter_var($data['newRegistration'] ?? true, FILTER_VALIDATE_BOOLEAN);
 
+/**
+ * Valida uma data no formato YYYY-MM-DD, não vazia e não no futuro.
+ */
+function validarDataAniversario(?string $data): ?string {
+    if (empty($data)) return null;
+    $d = DateTime::createFromFormat('Y-m-d', $data);
+    if (!$d || $d->format('Y-m-d') !== $data) return null;
+    if ($d > new DateTime()) return null;
+    return $data;
+}
+
+$dataAniversario           = validarDataAniversario($data['dataAniversario'] ?? null);
+$dataAniversarioSacerdotal = validarDataAniversario($data['dataAniversarioSacerdotal'] ?? null);
+
 // -------------------- VALIDAÇÃO --------------------
 if (!$name || !$email || !$password || !$whatsapp) {
     echo json_encode(['status' => 'error', 'message' => 'Dados incompletos']);
+    exit;
+}
+
+if (!$dataAniversario) {
+    echo json_encode(['status' => 'error', 'message' => 'Data de aniversário natalício inválida ou não fornecida']);
+    exit;
+}
+
+if (!empty($data['dataAniversarioSacerdotal']) && !$dataAniversarioSacerdotal) {
+    echo json_encode(['status' => 'error', 'message' => 'Data de aniversário sacerdotal inválida']);
     exit;
 }
 
@@ -89,10 +113,19 @@ $approvalUrl = "$backendUrl/components/linkAprovacao.php?code=$approvalCode";
 $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
 $stmt = $conn->prepare("
-    INSERT INTO usuarios (name, email, password, whatsapp, status, approval_code)
-    VALUES (?, ?, ?, ?, 'pendente', ?)
+    INSERT INTO usuarios (name, email, password, whatsapp, status, approval_code, data_aniversario, data_aniversario_sacerdotal)
+    VALUES (?, ?, ?, ?, 'pendente', ?, ?, ?)
 ");
-$stmt->bind_param("sssss", $name, $email, $passwordHash, $whatsapp, $approvalCode);
+$stmt->bind_param(
+    "sssssss",
+    $name,
+    $email,
+    $passwordHash,
+    $whatsapp,
+    $approvalCode,
+    $dataAniversario,
+    $dataAniversarioSacerdotal
+);
 
 if (!$stmt->execute()) {
     error_log("Erro INSERT: " . $stmt->error);

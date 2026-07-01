@@ -25,9 +25,27 @@ CREATE TABLE IF NOT EXISTS usuarios (
     status VARCHAR(20) NOT NULL DEFAULT 'pendente',
     approval_code VARCHAR(64) DEFAULT NULL,
     token VARCHAR(64) DEFAULT NULL,
+    data_aniversario DATE DEFAULT NULL,
+    data_aniversario_sacerdotal DATE DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_email (email),
     INDEX idx_token (token)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Nota: numa base de dados já existente sem estas colunas, correr manualmente
+--   ALTER TABLE usuarios ADD COLUMN data_aniversario DATE DEFAULT NULL,
+--                         ADD COLUMN data_aniversario_sacerdotal DATE DEFAULT NULL;
+-- (esta versão do MySQL/Aiven não aceita ADD COLUMN IF NOT EXISTS combinado)
+
+-- Idempotência dos avisos de aniversário (um aviso por utilizador, ano e tipo)
+CREATE TABLE IF NOT EXISTS aniversario_avisos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    ano INT NOT NULL,
+    tipo VARCHAR(20) NOT NULL,
+    enviado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_user_ano_tipo (user_id, ano, tipo),
+    CONSTRAINT fk_aniversario_avisos_user FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS admins (

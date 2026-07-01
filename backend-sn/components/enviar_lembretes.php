@@ -327,10 +327,131 @@ function notificarAtividades() {
 }
 
 // ---------------------------------------------------------------------------
+// Aniversários (natalício e sacerdotal) — aviso a toda a comunidade
+// ---------------------------------------------------------------------------
+function criarTabelaAniversarioAvisos($conn) {
+    $conn->query("CREATE TABLE IF NOT EXISTS aniversario_avisos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        ano INT NOT NULL,
+        tipo VARCHAR(20) NOT NULL,
+        enviado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_user_ano_tipo (user_id, ano, tipo)
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+}
+
+/**
+ * Verifica se já foi enviado um aviso deste tipo para este utilizador este ano.
+ * Regista atomicamente para evitar duplicados em execuções simultâneas.
+ */
+function marcarAniversarioAvisado($conn, $userId, $tipo) {
+    $ano = (int) date('Y');
+    $stmt = $conn->prepare(
+        "INSERT IGNORE INTO aniversario_avisos (user_id, ano, tipo) VALUES (?, ?, ?)"
+    );
+    $stmt->bind_param("iis", $userId, $ano, $tipo);
+    $stmt->execute();
+    return $stmt->affected_rows > 0;
+}
+
+function notificarAniversarios() {
+    global $conn;
+
+    criarTabelaAniversarioAvisos($conn);
+
+    $hojeMesDia = date('m-d');
+
+    $sql = "SELECT id, name, data_aniversario, data_aniversario_sacerdotal
+            FROM usuarios
+            WHERE status = 'aprovado'
+              AND (DATE_FORMAT(data_aniversario, '%m-%d') = ?
+                   OR DATE_FORMAT(data_aniversario_sacerdotal, '%m-%d') = ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ss", $hojeMesDia, $hojeMesDia);
+    $stmt->execute();
+    $aniversariantes = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    if (empty($aniversariantes)) {
+        logMsg("[Aniversários] Nenhum aniversariante hoje.");
+        return;
+    }
+
+    // Determina, para cada aniversariante, quais tipos ('natalicio'/'sacerdotal')
+    // fazem hoje e ainda não foram avisados este ano.
+    $paraAvisar = [];
+    foreach ($aniversariantes as $u) {
+        $tipos = [];
+        if ($u['data_aniversario'] && date('m-d', strtotime($u['data_aniversario'])) === $hojeMesDia) {
+            $tipos[] = 'natalicio';
+        }
+        if ($u['data_aniversario_sacerdotal'] && date('m-d', strtotime($u['data_aniversario_sacerdotal'])) === $hojeMesDia) {
+            $tipos[] = 'sacerdotal';
+        }
+        foreach ($tipos as $tipo) {
+            if (marcarAniversarioAvisado($conn, (int) $u['id'], $tipo)) {
+                $paraAvisar[] = ['nome' => trim($u['name']), 'tipo' => $tipo];
+            }
+        }
+    }
+
+    if (empty($paraAvisar)) {
+        logMsg("[Aniversários] Aniversariante(s) de hoje já tinham sido avisados este ano.");
+        return;
+    }
+
+    // Utilizadores aprovados (destinatários do aviso — toda a comunidade)
+    $usuarios = [];
+    $res = $conn->query("SELECT name, whatsapp, email FROM usuarios WHERE status = 'aprovado'");
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $usuarios[] = $row;
+        }
+    }
+
+    foreach ($paraAvisar as $av) {
+        $tipoLabel = $av['tipo'] === 'natalicio' ? 'Natalício' : 'Sacerdotal';
+        $msg       = "Hoje é aniversário {$tipoLabel} de {$av['nome']}, vamos parabenizá-lo!";
+        $assunto   = "Aniversário {$tipoLabel} de {$av['nome']}";
+
+        foreach ($usuarios as $destinatario) {
+            $nomeDest = trim($destinatario['name']);
+
+            if (!empty($destinatario['whatsapp'])) {
+                $ok = sendWhatsApp($destinatario['whatsapp'], $msg);
+                logMsg("[Aniversário WA " . ($ok ? "OK" : "FALHA") . "] $tipoLabel {$av['nome']} -> $nomeDest");
+            }
+
+            if (!empty($destinatario['email'])) {
+                $bodyHtml = "<p>$msg</p>";
+                $ok = sendEmail($destinatario['email'], $assunto, $bodyHtml, true);
+                logMsg("[Aniversário Email " . ($ok ? "OK" : "FALHA") . "] $tipoLabel {$av['nome']} -> $nomeDest");
+            }
+
+            usleep(200000);
+        }
+
+        sendPushNotification(
+            $conn,
+            "Aniversário {$tipoLabel}",
+            $msg,
+            '/',
+            [],
+            'psn-aniversario',
+            7200,
+            'high'
+        );
+
+        logMsg("[Aniversário Push] Enviado a todos os subscritores: $tipoLabel {$av['nome']}");
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Execução
 // ---------------------------------------------------------------------------
 enviarLembreteInscricao();
 enviarLembretes();
 notificarAtividades();
+notificarAniversarios();
 
 logMsg("--- Script finalizado em " . date('Y-m-d H:i:s') . " ---\n");
