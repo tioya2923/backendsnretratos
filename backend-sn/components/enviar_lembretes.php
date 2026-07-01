@@ -464,8 +464,9 @@ function notificarAniversarios() {
 
     foreach ($paraAvisar as $av) {
         $tipoLabel = $av['tipo'] === 'natalicio' ? 'Natalício' : 'Sacerdotal';
-        $msg       = "Hoje é aniversário {$tipoLabel} de {$av['nome']}, vamos parabenizá-lo!";
-        $assunto   = "Aniversário {$tipoLabel} de {$av['nome']}";
+        $titulo    = "Aniversariante do Dia: {$av['nome']}";
+        $msg       = "$titulo\n\nHoje é aniversário {$tipoLabel} de {$av['nome']}. Vamos todos parabenizá-lo(a)!";
+        $assunto   = $titulo;
 
         foreach ($usuarios as $destinatario) {
             $nomeDest = trim($destinatario['name']);
@@ -476,7 +477,7 @@ function notificarAniversarios() {
             }
 
             if (!empty($destinatario['email'])) {
-                $bodyHtml = "<p>$msg</p>";
+                $bodyHtml = "<p><strong>$titulo</strong></p><p>Hoje é aniversário {$tipoLabel} de <strong>{$av['nome']}</strong>. Vamos todos parabenizá-lo(a)!</p>";
                 $ok = sendEmail($destinatario['email'], $assunto, $bodyHtml, true);
                 logMsg("[Aniversário Email " . ($ok ? "OK" : "FALHA") . "] $tipoLabel {$av['nome']} -> $nomeDest");
             }
@@ -484,10 +485,18 @@ function notificarAniversarios() {
             usleep(200000);
         }
 
+        // Mensagem dentro da app (visível para todos, sem remetente humano)
+        $insertMsg = $conn->prepare(
+            "INSERT INTO mensagens (remetente_id, destinatario_id, corpo) VALUES (NULL, NULL, ?)"
+        );
+        $insertMsg->bind_param("s", $msg);
+        $insertMsg->execute();
+        logMsg("[Aniversário App] Mensagem criada: $tipoLabel {$av['nome']}");
+
         sendPushNotification(
             $conn,
-            "Aniversário {$tipoLabel}",
-            $msg,
+            $titulo,
+            "Hoje é aniversário {$tipoLabel} de {$av['nome']}. Vamos todos parabenizá-lo(a)!",
             '/',
             [],
             'psn-aniversario',

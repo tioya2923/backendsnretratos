@@ -107,18 +107,18 @@ if ($method === 'GET') {
         exit;
     }
 
-    // Recebidas (inbox)
+    // Recebidas (inbox) — remetente_id pode ser NULL (mensagens automáticas do sistema)
     $stmt = $conn->prepare("
         SELECT m.id, m.remetente_id, m.corpo, m.created_at,
-               u.name AS remetente_nome,
+               COALESCE(u.name, 'Paróquia de São Nicolau') AS remetente_nome,
                CASE WHEN m.destinatario_id IS NULL THEN 1 ELSE 0 END AS para_todos,
                CASE WHEN ml.mensagem_id IS NOT NULL THEN 1 ELSE 0 END AS lida
         FROM mensagens m
-        JOIN usuarios u ON u.id = m.remetente_id
+        LEFT JOIN usuarios u ON u.id = m.remetente_id
         LEFT JOIN mensagem_leituras ml
                ON ml.mensagem_id = m.id AND ml.utilizador_id = ?
         WHERE (m.destinatario_id = ? OR m.destinatario_id IS NULL)
-          AND m.remetente_id != ?
+          AND (m.remetente_id != ? OR m.remetente_id IS NULL)
         ORDER BY m.created_at DESC
         LIMIT 100
     ");
@@ -127,7 +127,7 @@ if ($method === 'GET') {
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     foreach ($rows as &$r) {
         $r['id']          = (int)$r['id'];
-        $r['remetente_id'] = (int)$r['remetente_id'];
+        $r['remetente_id'] = $r['remetente_id'] !== null ? (int)$r['remetente_id'] : null;
         $r['lida']        = (bool)$r['lida'];
         $r['para_todos']  = (bool)$r['para_todos'];
     }

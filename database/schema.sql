@@ -145,7 +145,7 @@ CREATE TABLE IF NOT EXISTS atividades_usuario (
 CREATE TABLE IF NOT EXISTS mensagens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     grupo_id VARCHAR(40) DEFAULT NULL,
-    remetente_id INT NOT NULL,
+    remetente_id INT DEFAULT NULL, -- NULL = mensagem automática do sistema (ex: aviso de aniversário)
     destinatario_id INT DEFAULT NULL,
     corpo TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
