@@ -100,16 +100,58 @@ function enviarLembreteInscricao() {
 
     logMsg("[LOG] Iniciando lembrete de INSCRIÇÃO semanal ($tipoAtivo)...");
 
-    $link    = rtrim(getenv('FRONTEND_URL') ?: '', '/') . '/';
-    $assunto = "Recordatório: Inscrição para Refeições";
+    $link            = rtrim(getenv('FRONTEND_URL') ?: '', '/') . '/';
+    $unsubscribeLink = rtrim(getenv('FRONTEND_URL') ?: '', '/') . '/unsubscribe';
+    $assunto         = "Recordatório: Inscrição para Refeições";
 
-    $sql = "SELECT name, whatsapp, email FROM usuarios WHERE status = 'aprovado'";
+    $rodapeWa   = "\n\nSe já não fazes parte da nossa comunidade, clica aqui para deixares de receber as nossas mensagens: $unsubscribeLink";
+    $rodapeHtml = "<br><br><small>Se já não fazes parte da nossa comunidade, <a href='$unsubscribeLink'>clica aqui para deixares de receber as nossas mensagens</a>.</small>";
+
+    // À 5ª-feira só reenviamos a quem, desde a 2ª-feira, ainda não se
+    // inscreveu em nenhuma refeição desta semana (Segunda a Domingo).
+    $jaInscritos = [];
+    if ($tipoAtivo === 'inscricao_quinta') {
+        $segunda = date('Y-m-d', strtotime('-' . ($diaSemana - 1) . ' days'));
+        $domingo = date('Y-m-d', strtotime("$segunda +6 days"));
+
+        $stmtSemana = $conn->prepare("SELECT DISTINCT nome_completo FROM refeicoes WHERE data BETWEEN ? AND ?");
+        $stmtSemana->bind_param("ss", $segunda, $domingo);
+        $stmtSemana->execute();
+        $resSemana = $stmtSemana->get_result();
+        while ($row = $resSemana->fetch_assoc()) {
+            $jaInscritos[] = mb_strtolower(trim($row['nome_completo']), 'UTF-8');
+        }
+        $stmtSemana->close();
+        logMsg("[Inscrição] Semana $segunda a $domingo — já inscritos: " . count($jaInscritos));
+    }
+
+    $sql = "SELECT id, name, whatsapp, email FROM usuarios WHERE status = 'aprovado'";
     $res = $conn->query($sql);
+
+    $destinatarioIds = [];
 
     if ($res) {
         while ($user = $res->fetch_assoc()) {
             $nome = trim($user['name']);
-            $msg  = "Olá, $nome! Recorda-te de fazer a tua inscrição para as próximas refeições. Clica aqui: $link";
+
+            if ($tipoAtivo === 'inscricao_quinta' && in_array(mb_strtolower($nome, 'UTF-8'), $jaInscritos)) {
+                continue; // já se inscreveu esta semana, não repetir o lembrete
+            }
+
+            if ($tipoAtivo === 'inscricao_quinta') {
+                $msg      = "Olá, $nome! Estás a receber este lembrete de novo porque na segunda-feira já te avisámos e ainda não fizeste a tua inscrição para as próximas refeições. Clica aqui: $link";
+                $bodyHtml = "Olá, <strong>$nome</strong>!<br><br>
+                             Estás a receber este lembrete de novo porque na segunda-feira já te avisámos e ainda não fizeste a tua inscrição para as próximas refeições.<br>
+                             <a href='$link'>Clica aqui para te inscrever</a>";
+            } else {
+                $msg      = "Olá, $nome! Recorda-te de fazer a tua inscrição para as próximas refeições. Clica aqui: $link";
+                $bodyHtml = "Olá, <strong>$nome</strong>!<br><br>
+                             Recorda-te de fazer a tua inscrição para as próximas refeições.<br>
+                             <a href='$link'>Clica aqui para te inscrever</a>";
+            }
+
+            $msg      .= $rodapeWa;
+            $bodyHtml .= $rodapeHtml;
 
             if (!empty($user['whatsapp'])) {
                 $ok = sendWhatsApp($user['whatsapp'], $msg);
@@ -117,29 +159,30 @@ function enviarLembreteInscricao() {
             }
 
             if (!empty($user['email'])) {
-                $bodyHtml = "Olá, <strong>$nome</strong>!<br><br>
-                             Recorda-te de fazer a tua inscrição para as próximas refeições.<br>
-                             <a href='$link'>Clica aqui para te inscrever</a>";
                 $ok = sendEmail($user['email'], $assunto, $bodyHtml, true);
                 logMsg("[Inscrição Email] " . ($ok ? "OK" : "FALHA") . ": $nome");
             }
+
+            $destinatarioIds[] = (int) $user['id'];
 
             usleep(200000);
         }
     }
 
-    sendPushNotification(
-        $conn,
-        'Inscrição para Refeições',
-        'Recorda-te de fazer a tua inscrição para as próximas refeições!',
-        '/refeicoes',
-        [],
-        'psn-refeicao',
-        7200,
-        'high'
-    );
+    if (!empty($destinatarioIds)) {
+        sendPushNotification(
+            $conn,
+            'Inscrição para Refeições',
+            'Recorda-te de fazer a tua inscrição para as próximas refeições!',
+            '/refeicoes',
+            $destinatarioIds,
+            'psn-refeicao',
+            7200,
+            'high'
+        );
+    }
 
-    logMsg("[Inscrição Push] Enviado para todos os subscritores.");
+    logMsg("[Inscrição Push] Enviado a " . count($destinatarioIds) . " utilizador(es).");
 }
 
 // ---------------------------------------------------------------------------
