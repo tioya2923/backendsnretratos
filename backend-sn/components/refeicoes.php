@@ -27,7 +27,12 @@ if ($conn->connect_error) {
 function verificarToken($conn) {
     $token = getBearerToken();
     if (empty($token)) return null;
-    $stmt = $conn->prepare("SELECT name FROM usuarios WHERE token = ?");
+    $stmt = $conn->prepare("
+        SELECT u.name
+        FROM sessoes s
+        JOIN usuarios u ON u.id = s.user_id
+        WHERE s.token = ?
+    ");
     $stmt->bind_param("s", $token);
     $stmt->execute();
     $result = $stmt->get_result();

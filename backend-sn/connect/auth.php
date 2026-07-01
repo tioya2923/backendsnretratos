@@ -28,9 +28,9 @@ function getAuthUserId(mysqli $conn): ?int {
     $token = getBearerToken();
     if (empty($token)) return null;
 
-    $stmt = $conn->prepare("SELECT id FROM usuarios WHERE token = ?");
+    $stmt = $conn->prepare("SELECT user_id FROM sessoes WHERE token = ?");
     $stmt->bind_param("s", $token);
     $stmt->execute();
     $row = $stmt->get_result()->fetch_assoc();
-    return $row ? (int)$row['id'] : null;
+    return $row ? (int)$row['user_id'] : null;
 }

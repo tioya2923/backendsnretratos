@@ -44,12 +44,11 @@ if ($result->num_rows > 0) {
                 echo json_encode(["status" => "whatsapp_required", "message" => "Por favor, insira seu número de WhatsApp para continuar.", "user_id" => $row['id']]);
                 exit();
             }
-            // Gerar um token de autenticação
+            // Gerar um token de autenticação (uma nova sessão; não invalida outras)
             $token = bin2hex(random_bytes(16));
-            // Armazenar o token no banco de dados
-            $update_stmt = $conn->prepare("UPDATE usuarios SET token = ? WHERE id = ?");
-            $update_stmt->bind_param("si", $token, $row['id']);
-            $update_stmt->execute();
+            $insert_stmt = $conn->prepare("INSERT INTO sessoes (user_id, token) VALUES (?, ?)");
+            $insert_stmt->bind_param("is", $row['id'], $token);
+            $insert_stmt->execute();
             // Retornar uma resposta de sucesso com o token
             echo json_encode(["status" => "success", "message" => "Login bem-sucedido", "name" => $row['name'], "token" => $token]);
         } else {

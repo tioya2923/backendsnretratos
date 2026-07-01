@@ -24,12 +24,23 @@ CREATE TABLE IF NOT EXISTS usuarios (
     whatsapp VARCHAR(20) DEFAULT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pendente',
     approval_code VARCHAR(64) DEFAULT NULL,
-    token VARCHAR(64) DEFAULT NULL,
     data_aniversario DATE DEFAULT NULL,
     data_aniversario_sacerdotal DATE DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_email (email),
-    INDEX idx_token (token)
+    UNIQUE KEY unique_email (email)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Uma linha por sessão iniciada — permite várias sessões em simultâneo por
+-- utilizador (antes, o token vivia numa única coluna em usuarios e cada
+-- novo login invalidava a sessão anterior nesse ou noutro dispositivo).
+CREATE TABLE IF NOT EXISTS sessoes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token VARCHAR(64) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_token (token),
+    INDEX idx_user (user_id),
+    CONSTRAINT fk_sessoes_user FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Nota: numa base de dados já existente sem estas colunas, correr manualmente
