@@ -38,6 +38,9 @@ if (!$dbUrl) {
 // Processar a URL de conexão ao banco de dados
 $url = parse_url($dbUrl);
 
+// DEBUG - Mostrar o resultado do parse_url
+error_log('DEBUG: parse_url result: ' . json_encode($url));
+
 if (!isset($url["host"], $url["user"], $url["pass"], $url["path"])) {
     $msg = 'FATAL: URL de conexão ao banco está incompleta.';
     error_log($msg);
@@ -50,6 +53,11 @@ $user = $url["user"];
 $password = $url["pass"];
 $db = ltrim($url["path"], '/');
 $port = $url["port"] ?? 3306;
+
+// DEBUG - Testar DNS antes de conectar
+error_log('DEBUG: Host to connect: ' . $host);
+$ip = @gethostbyname($host);
+error_log('DEBUG: DNS resolution for ' . $host . ' = ' . $ip);
 
 // Definir constantes para conexão ao banco de dados
 define('DB_HOST', $host);
