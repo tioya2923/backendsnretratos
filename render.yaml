@@ -7,26 +7,26 @@ services:
     healthCheckPath: /
     envVars:
       - key: DB_URL
-        sync: false
+        value: "mysql://p1y4uv9qz337uqu0:mz3a4789hffp4wyc@z12itfj4c1vgopf8.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/zhlxohnu81id1j8i"
       - key: DB_SSL
-        value: "true"
+        value: "false"
       - key: DB_SSL_CA
-        sync: false
+        value: ""
       - key: MAIL_USERNAME
-        sync: false
+        value: "retratospsn@gmail.com"
       - key: MAIL_PASSWORD
-        sync: false
+        value: "thqyngnejodzttwl"
       - key: VAPID_PUBLIC_KEY
-        sync: false
+        value: "BOMk6zRnm2Bg6T8bVCbDv3gGESt2qlN4F0IJ6DFo68xYlu1Ue7tZ0jpJ-ICnSJJD6u-Y3j0ibVWiul7idYffmks"
       - key: VAPID_PRIVATE_KEY
-        sync: false
+        value: "bwYwrpjYfhkqnUNowCqZdNZSEBBwJGzp6fqsuiB-JxQ"
       - key: VAPID_SUBJECT
-        sync: false
+        value: "mailto:retratospsn@gmail.com"
       - key: PUSH_ADMIN_SECRET
-        sync: false
+        value: ""
       - key: BACKEND_URL
         value: https://snretratos-backend.onrender.com
       - key: FRONTEND_URL
         value: https://frontendsnretratos.onrender.com
       - key: CRON_SECRET
-        sync: false
+        value: ""
