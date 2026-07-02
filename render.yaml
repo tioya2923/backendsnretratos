@@ -15,18 +15,18 @@ services:
       - key: MAIL_USERNAME
         value: "retratospsn@gmail.com"
       - key: MAIL_PASSWORD
-        value: "thqyngnejodzttwl"
+        sync: false
       - key: VAPID_PUBLIC_KEY
         value: "BOMk6zRnm2Bg6T8bVCbDv3gGESt2qlN4F0IJ6DFo68xYlu1Ue7tZ0jpJ-ICnSJJD6u-Y3j0ibVWiul7idYffmks"
       - key: VAPID_PRIVATE_KEY
-        value: "bwYwrpjYfhkqnUNowCqZdNZSEBBwJGzp6fqsuiB-JxQ"
+        sync: false
       - key: VAPID_SUBJECT
         value: "mailto:retratospsn@gmail.com"
       - key: PUSH_ADMIN_SECRET
-        value: ""
+        sync: false
       - key: BACKEND_URL
         value: https://snretratos-backend.onrender.com
       - key: FRONTEND_URL
         value: https://frontendsnretratos.onrender.com
       - key: CRON_SECRET
-        value: ""
+        sync: false

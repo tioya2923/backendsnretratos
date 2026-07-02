@@ -19,9 +19,6 @@ $dbUrl = getenv('DB_URL') ?: ($_ENV['DB_URL'] ?? ($_SERVER['DB_URL'] ?? null));
 $mailUsername = getenv('MAIL_USERNAME') ?: ($_ENV['MAIL_USERNAME'] ?? ($_SERVER['MAIL_USERNAME'] ?? null));
 $mailPassword = getenv('MAIL_PASSWORD') ?: ($_ENV['MAIL_PASSWORD'] ?? ($_SERVER['MAIL_PASSWORD'] ?? null));
 
-// DEBUG: Logar qual DB_URL foi carregada (remover em produção)
-error_log('DEBUG - DB_URL carregada: ' . substr($dbUrl, 0, 50) . '...');
-
 if (!$dbUrl) {
     $msg = 'FATAL: A variável DB_URL não foi carregada.';
     error_log($msg);
