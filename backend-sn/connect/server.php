@@ -15,7 +15,16 @@ if (class_exists('Dotenv\Dotenv')) {
 }
 
 // Tentar buscar DB_URL de todas as fontes possíveis
-$dbUrl = getenv('DB_URL') ?: ($_ENV['DB_URL'] ?? ($_SERVER['DB_URL'] ?? null));
+$dbUrl = getenv('DB_URL');
+if (!$dbUrl) $dbUrl = $_ENV['DB_URL'] ?? null;
+if (!$dbUrl) $dbUrl = $_SERVER['DB_URL'] ?? null;
+
+// DEBUG - Log para diagnosticar qual variável foi carregada
+error_log('DEBUG: getenv(DB_URL)=' . (getenv('DB_URL') ? 'SET' : 'UNSET'));
+error_log('DEBUG: $_ENV[DB_URL]=' . ($_ENV['DB_URL'] ? 'SET' : 'UNSET'));
+error_log('DEBUG: $_SERVER[DB_URL]=' . ($_SERVER['DB_URL'] ? 'SET' : 'UNSET'));
+error_log('DEBUG: dbUrl final=' . ($dbUrl ? substr($dbUrl, 0, 40) : 'NULO'));
+
 $mailUsername = getenv('MAIL_USERNAME') ?: ($_ENV['MAIL_USERNAME'] ?? ($_SERVER['MAIL_USERNAME'] ?? null));
 $mailPassword = getenv('MAIL_PASSWORD') ?: ($_ENV['MAIL_PASSWORD'] ?? ($_SERVER['MAIL_PASSWORD'] ?? null));
 
