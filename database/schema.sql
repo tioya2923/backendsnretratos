@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS admins (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_email_admin (email_admin)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Nota: não existe administrador criado por omissão. Crie um admin manualmente após aplicar o schema.
 
 -- ── Grupos e membros (nomes com maiúscula inicial — usados assim no código) ──
 

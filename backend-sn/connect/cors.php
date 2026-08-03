@@ -4,12 +4,15 @@ if (php_sapi_name() === 'cli') return;
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-$permitida = (
-    $origin === 'http://localhost:3000' ||
-    str_ends_with($origin, '.onrender.com') ||
-    str_ends_with($origin, '.snrefeicoes.pt') ||
-    $origin === 'https://snrefeicoes.pt'
-);
+$allowedOrigins = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://frontendsnretratos.onrender.com',
+    'https://snrefeicoes.pt',
+    'https://www.snrefeicoes.pt',
+];
+
+$permitida = in_array($origin, $allowedOrigins, true);
 
 if ($origin && $permitida) {
     header("Access-Control-Allow-Origin: " . $origin);
