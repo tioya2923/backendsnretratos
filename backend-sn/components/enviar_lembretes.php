@@ -16,10 +16,17 @@ require_once __DIR__ . '/push_utils.php';
 // internet dispare envios em massa de WhatsApp/email a todos os utilizadores).
 $cronSecret = getenv('CRON_SECRET');
 $recebido   = $_SERVER['HTTP_X_CRON_SECRET'] ?? '';
-if (php_sapi_name() !== 'cli' && (!$cronSecret || !hash_equals($cronSecret, $recebido))) {
-    http_response_code(403);
-    echo json_encode(['error' => 'Acesso negado']);
-    exit;
+if (php_sapi_name() !== 'cli') {
+    if (!$cronSecret) {
+        http_response_code(500);
+        echo json_encode(['error' => 'CRON_SECRET não está configurado no servidor']);
+        exit;
+    }
+    if (!hash_equals($cronSecret, $recebido)) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Acesso negado']);
+        exit;
+    }
 }
 
 $conn->set_charset("utf8mb4");

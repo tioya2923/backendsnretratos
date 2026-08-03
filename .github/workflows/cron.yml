@@ -11,9 +11,15 @@ on:
 jobs:
   trigger:
     runs-on: ubuntu-latest
+    env:
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
     steps:
       - name: Chamar enviar_lembretes.php no backend
         run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET não está definido no GitHub Actions" >&2
+            exit 1
+          fi
           curl --fail --silent --show-error \
-            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            -H "X-Cron-Secret: $CRON_SECRET" \
             https://snretratos-backend.onrender.com/components/enviar_lembretes.php

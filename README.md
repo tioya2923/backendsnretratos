@@ -11,3 +11,10 @@
 4. Para rodar localmente, use um servidor PHP apontando para a pasta `backend-sn`.
 5. O backend responde a requisições do frontend em `/components/*.php`.
 6. Certifique-se de que o CORS está habilitado corretamente para o domínio do frontend.
+
+## Cron e CRON_SECRET
+
+- O workflow `/.github/workflows/cron.yml` chama `components/enviar_lembretes.php` periodicamente.
+- Esse endpoint exige o header `X-Cron-Secret` com o valor de `CRON_SECRET`.
+- Defina `CRON_SECRET` como variável de ambiente no serviço do Render e também como segredo no GitHub Actions.
+- Os valores devem ser idênticos nas duas plataformas para que o cron funcione.
