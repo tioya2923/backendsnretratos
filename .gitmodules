@@ -1,0 +1,6 @@
+[submodule "backendsnretratos"]
+    path = backendsnretratos
+    url = https://github.com/tioya2923/backendsnretratos.git
+[submodule "frontendsnretratos"]
+    path = frontendsnretratos
+    url = https://github.com/tioya2923/frontendsnretratos.git
