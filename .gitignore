@@ -1,2 +1,5 @@
 .env
 /vendor/
+
+# Ignore cron secret file
+cron_secret.txt
