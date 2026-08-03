@@ -4,13 +4,22 @@ if (php_sapi_name() === 'cli') return;
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-$allowedOrigins = [
+$defaultAllowedOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'https://frontendsnretratos.onrender.com',
     'https://snrefeicoes.pt',
     'https://www.snrefeicoes.pt',
 ];
+
+$allowedOrigins = $defaultAllowedOrigins;
+$allowedEnv = getenv('ALLOWED_ORIGINS');
+if ($allowedEnv) {
+    $providedOrigins = array_filter(array_map('trim', explode(',', $allowedEnv)));
+    if (!empty($providedOrigins)) {
+        $allowedOrigins = $providedOrigins;
+    }
+}
 
 $permitida = in_array($origin, $allowedOrigins, true);
 

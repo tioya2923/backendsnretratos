@@ -3,3 +3,4 @@
 
 # Ignore cron secret file
 cron_secret.txt
+.DS_Store
