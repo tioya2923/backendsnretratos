@@ -1,0 +1,50 @@
+name: Deploy - Backend para PTisp
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mysqli, curl, mbstring, gmp, bcmath
+          tools: composer:v2
+
+      - name: Instalar dependências (sem devDependencies)
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Enviar ficheiros por FTP/FTPS para a PTisp
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.PTISP_FTP_SERVER }}
+          username: ${{ secrets.PTISP_FTP_USERNAME }}
+          password: ${{ secrets.PTISP_FTP_PASSWORD }}
+          protocol: ftps
+          # Pasta no servidor onde fica o repositório (a que contém backend-sn/,
+          # vendor/, composer.json). NÃO é a pasta pública do subdomínio — essa
+          # é backend-sn/, que fica dentro desta.
+          server-dir: ${{ secrets.PTISP_BACKEND_SERVER_DIR || './backendsnretratos/' }}
+          local-dir: "./"
+          # dangerous-clean-slate NÃO fica ativo: assim o .env (que não está no
+          # git) nunca é apagado do servidor por este workflow.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            database/**
+            docker/**
+            README.md
+            Dockerfile
+            Procfile
+            render.yaml
+            .dockerignore
+            .env.example
