@@ -99,7 +99,7 @@ $sql = "SELECT * FROM usuarios WHERE approval_code = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("s", $approvalCode);
 $stmt->execute();
-$result = $stmt->get_result();
+$result = stmt_get_result($stmt);
 
 if ($result->num_rows === 0) {
     renderPage(false, 'Código inválido', 'Este código de aprovação não é válido ou já foi utilizado.');

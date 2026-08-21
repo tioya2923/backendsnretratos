@@ -35,7 +35,7 @@ $stmt->bind_param("s", $email);
 
 // Executar a consulta
 $stmt->execute();
-$result = $stmt->get_result();
+$result = stmt_get_result($stmt);
 
 if ($result->num_rows > 0) {
     $row = $result->fetch_assoc();

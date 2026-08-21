@@ -67,7 +67,7 @@ function sendPushNotification(
         $types = str_repeat('i', count($userIds));
         $stmt->bind_param($types, ...$userIds);
         $stmt->execute();
-        $result = $stmt->get_result();
+        $result = stmt_get_result($stmt);
     } else {
         $result = $conn->query("SELECT endpoint, p256dh, auth FROM push_subscriptions");
     }

@@ -62,7 +62,7 @@ if ($method === 'GET') {
     );
     $stmt->bind_param("i", $userId);
     $stmt->execute();
-    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $rows = stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
     foreach ($rows as &$r) {
         $r['id']    = (int)$r['id'];
         $r['ativo'] = (bool)$r['ativo'];
@@ -130,7 +130,7 @@ if ($method === 'PUT') {
     $stmt = $conn->prepare("SELECT id FROM atividades_usuario WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $id, $userId);
     $stmt->execute();
-    if (!$stmt->get_result()->fetch_assoc()) {
+    if (!stmt_get_result($stmt)->fetch_assoc()) {
         http_response_code(403);
         echo json_encode(['error' => 'Acesso negado']);
         exit;

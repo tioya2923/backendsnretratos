@@ -1,6 +1,7 @@
 <?php
 require 'cors.php'; // Habilita o CORS
 require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/mysqli_polyfill.php'; // stmt_get_result(): funciona com ou sem mysqlnd
 
 // Carregar variáveis do .env corretamente a partir da raiz do projeto
 if (class_exists('Dotenv\Dotenv')) {

@@ -59,7 +59,7 @@ if ($method === 'GET') {
         ");
         $stmt->bind_param("iii", $userId, $userId, $userId);
         $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
+        $row = stmt_get_result($stmt)->fetch_assoc();
         echo json_encode(['count' => (int)$row['total']]);
         exit;
     }
@@ -69,7 +69,7 @@ if ($method === 'GET') {
         $stmt = $conn->prepare("SELECT id, name FROM usuarios WHERE id != ? ORDER BY name");
         $stmt->bind_param("i", $userId);
         $stmt->execute();
-        $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rows = stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
         foreach ($rows as &$r) $r['id'] = (int)$r['id'];
         echo json_encode($rows);
         exit;
@@ -94,7 +94,7 @@ if ($method === 'GET') {
         ");
         $stmt->bind_param("i", $userId);
         $stmt->execute();
-        $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $rows = stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
         foreach ($rows as &$r) {
             $r['id']        = (int)$r['id'];
             $r['para_todos'] = (bool)$r['para_todos'];
@@ -124,7 +124,7 @@ if ($method === 'GET') {
     ");
     $stmt->bind_param("iii", $userId, $userId, $userId);
     $stmt->execute();
-    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $rows = stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
     foreach ($rows as &$r) {
         $r['id']          = (int)$r['id'];
         $r['remetente_id'] = $r['remetente_id'] !== null ? (int)$r['remetente_id'] : null;
@@ -152,7 +152,7 @@ if ($method === 'POST') {
     $senderStmt = $conn->prepare("SELECT name FROM usuarios WHERE id = ?");
     $senderStmt->bind_param("i", $userId);
     $senderStmt->execute();
-    $senderRow = $senderStmt->get_result()->fetch_assoc();
+    $senderRow = stmt_get_result($senderStmt)->fetch_assoc();
     $senderName = $senderRow['name'] ?? 'Alguém';
     $senderStmt->close();
 
@@ -207,7 +207,7 @@ if ($method === 'POST') {
         $allUsersStmt = $conn->prepare("SELECT id, name, whatsapp, email FROM usuarios WHERE id != ? AND status = 'aprovado'");
         $allUsersStmt->bind_param("i", $userId);
         $allUsersStmt->execute();
-        $notifUsuarios = $allUsersStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $notifUsuarios = stmt_get_result($allUsersStmt)->fetch_all(MYSQLI_ASSOC);
         $allUsersStmt->close();
     } elseif (!empty($pushUserIds)) {
         $placeholders = implode(',', array_fill(0, count($pushUserIds), '?'));
@@ -215,7 +215,7 @@ if ($method === 'POST') {
         $destStmt = $conn->prepare("SELECT id, name, whatsapp, email FROM usuarios WHERE id IN ($placeholders)");
         $destStmt->bind_param($typesStr, ...$pushUserIds);
         $destStmt->execute();
-        $notifUsuarios = $destStmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $notifUsuarios = stmt_get_result($destStmt)->fetch_all(MYSQLI_ASSOC);
         $destStmt->close();
     }
 

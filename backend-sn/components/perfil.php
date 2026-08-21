@@ -16,7 +16,7 @@ if (!$userId) {
 $stmt = $conn->prepare("SELECT id, name, email, whatsapp, status FROM usuarios WHERE id = ?");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
-$user = $stmt->get_result()->fetch_assoc();
+$user = stmt_get_result($stmt)->fetch_assoc();
 if (!$user) {
     http_response_code(401);
     echo json_encode(['error' => 'Não autenticado']);

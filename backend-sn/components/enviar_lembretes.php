@@ -124,7 +124,7 @@ function enviarLembreteInscricao() {
         $stmtSemana = $conn->prepare("SELECT DISTINCT nome_completo FROM refeicoes WHERE data BETWEEN ? AND ?");
         $stmtSemana->bind_param("ss", $segunda, $domingo);
         $stmtSemana->execute();
-        $resSemana = $stmtSemana->get_result();
+        $resSemana = stmt_get_result($stmtSemana);
         while ($row = $resSemana->fetch_assoc()) {
             $jaInscritos[] = mb_strtolower(trim($row['nome_completo']), 'UTF-8');
         }
@@ -341,7 +341,7 @@ function notificarAtividades() {
     ");
     $stmt->bind_param("sss", $hoje, $horaMin, $horaMax);
     $stmt->execute();
-    $atividades = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $atividades = stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
 
     if (empty($atividades)) {
         logMsg("[Atividades] Nenhuma atividade para notificar agora.");
@@ -429,7 +429,7 @@ function notificarAniversarios() {
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("ss", $hojeMesDia, $hojeMesDia);
     $stmt->execute();
-    $aniversariantes = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $aniversariantes = stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
 
     if (empty($aniversariantes)) {
@@ -586,7 +586,7 @@ function lembrarMensagensNaoLidas() {
             $lidaStmt = $conn->prepare("SELECT 1 FROM mensagem_leituras WHERE mensagem_id = ? AND utilizador_id = ?");
             $lidaStmt->bind_param("ii", $mensagemId, $destId);
             $lidaStmt->execute();
-            $jaLida = $lidaStmt->get_result()->num_rows > 0;
+            $jaLida = stmt_get_result($lidaStmt)->num_rows > 0;
             $lidaStmt->close();
             if ($jaLida) continue;
 

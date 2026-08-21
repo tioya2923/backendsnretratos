@@ -32,7 +32,7 @@ $sql = "
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("sss", $hoje, $horaMin, $horaMax);
 $stmt->execute();
-$atividades = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$atividades = stmt_get_result($stmt)->fetch_all(MYSQLI_ASSOC);
 
 if (empty($atividades)) {
     file_put_contents($logfile, "Nenhuma atividade para notificar.\n", FILE_APPEND);

@@ -27,7 +27,7 @@ $stmt = $conn->prepare("
 ");
 $stmt->bind_param("ss", $hojeMesDia, $hojeMesDia);
 $stmt->execute();
-$result = $stmt->get_result();
+$result = stmt_get_result($stmt);
 
 $natalicio = [];
 $sacerdotal = [];

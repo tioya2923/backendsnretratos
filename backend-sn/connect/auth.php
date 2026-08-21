@@ -31,6 +31,6 @@ function getAuthUserId(mysqli $conn): ?int {
     $stmt = $conn->prepare("SELECT user_id FROM sessoes WHERE token = ?");
     $stmt->bind_param("s", $token);
     $stmt->execute();
-    $row = $stmt->get_result()->fetch_assoc();
+    $row = stmt_get_result($stmt)->fetch_assoc();
     return $row ? (int)$row['user_id'] : null;
 }

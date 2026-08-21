@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['grupo_id'])) {
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $grupo_id);
         $stmt->execute();
-        $result = $stmt->get_result();
+        $result = stmt_get_result($stmt);
         $refeicoes = [];
         while ($row = $result->fetch_assoc()) {
             $refeicoes[] = $row;

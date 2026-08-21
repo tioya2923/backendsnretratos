@@ -18,7 +18,7 @@ if (isset($input['codigo'])) {
     $stmt = $conn->prepare('SELECT * FROM codigosecreto WHERE verificacao = ?');
     $stmt->bind_param('s', $codigoUsuario);
     $stmt->execute();
-    $result = $stmt->get_result();
+    $result = stmt_get_result($stmt);
     $user = $result->fetch_assoc();
 
     if ($user) {

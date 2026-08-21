@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt = $conn->prepare($check_sql);
         $stmt->bind_param("ssiiiiiii", $nome_completo, $data_refeicao, $levar_refeicao, $almoco, $almoco_mais_cedo, $almoco_mais_tarde, $jantar, $jantar_mais_cedo, $jantar_mais_tarde);
         $stmt->execute();
-        $check_result = $stmt->get_result();
+        $check_result = stmt_get_result($stmt);
         if ($check_result->num_rows > 0) {
             echo json_encode(["message" => "Já inscrito para esta refeição", "nome" => $nome_completo]);
             exit();
