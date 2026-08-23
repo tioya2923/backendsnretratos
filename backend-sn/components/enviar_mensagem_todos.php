@@ -9,6 +9,16 @@
 
 date_default_timezone_set('Europe/Lisbon');
 
+// Apesar do comentário acima, nada impedia este script de correr também
+// via pedido HTTP (mensagem em massa a todos, sem autenticação). Reforçar
+// aqui: só corre mesmo em CLI.
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Este script só pode ser executado em CLI']);
+    exit;
+}
+
 require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/whatsapp_utils.php';
