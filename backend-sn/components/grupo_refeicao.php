@@ -34,10 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($data['grupo_id']) && isset($d
     if ($stmt->execute()) {
         echo json_encode(["status" => "success", "message" => "Refeição adicionada com sucesso"]);
     } else {
+        http_response_code(500);
         echo json_encode(["status" => "error", "message" => "Erro ao adicionar refeição"]);
     }
     $stmt->close();
 } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    http_response_code(400);
     echo json_encode(["status" => "error", "message" => "Dados incompletos"]);
     exit();
 }
@@ -59,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['grupo_id'])) {
         $stmt->close();
         exit();
     } else {
+        http_response_code(400);
         echo json_encode(["status" => "error", "message" => "ID do grupo inválido"]);
         exit();
     }

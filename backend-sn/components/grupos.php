@@ -60,6 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['grupo_id'])) {
 // Adicionar, Atualizar ou Eliminar Grupo
 $data = json_decode(file_get_contents("php://input"), true);
 
+// Nota: antes, todos os ramos abaixo devolviam sempre HTTP 200, mesmo em
+// erro — o frontend nunca via a falha (axios só cai no .catch() para
+// respostas não-2xx) e mostrava sucesso mesmo quando nada tinha mudado.
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($data['nome_grupo'])) {
         $nome_grupo = $data['nome_grupo'];
@@ -74,16 +77,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $check_stmt->close();
 
         if ($count > 0) {
-            echo json_encode(["message" => "Grupo já existe"]);
+            http_response_code(409);
+            echo json_encode(["status" => "error", "message" => "Grupo já existe"]);
         } else {
             $sql = "INSERT INTO Grupos (nome_grupo) VALUES (?)";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("s", $nome_grupo);
 
             if ($stmt->execute()) {
-                echo json_encode(["message" => "Grupo adicionado com sucesso"]);
+                echo json_encode(["status" => "success", "message" => "Grupo adicionado com sucesso"]);
             } else {
-                echo json_encode(["message" => "Erro ao adicionar grupo: " . $stmt->error]);
+                http_response_code(500);
+                echo json_encode(["status" => "error", "message" => "Erro ao adicionar grupo: " . $stmt->error]);
             }
             $stmt->close();
         }
@@ -96,13 +101,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("si", $nome_membro, $grupo_id);
 
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Membro adicionado com sucesso"]);
+            echo json_encode(["status" => "success", "message" => "Membro adicionado com sucesso"]);
         } else {
-            echo json_encode(["message" => "Erro ao adicionar membro: " . $stmt->error]);
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Erro ao adicionar membro: " . $stmt->error]);
         }
         $stmt->close();
     } else {
-        echo json_encode(["message" => "Dados incompletos"]);
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Dados incompletos"]);
     }
 } elseif ($_SERVER['REQUEST_METHOD'] == 'PUT') {
     if (isset($data['id']) && isset($data['nome_grupo'])) {
@@ -114,13 +121,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("si", $nome_grupo, $id);
 
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Grupo atualizado com sucesso"]);
+            echo json_encode(["status" => "success", "message" => "Grupo atualizado com sucesso"]);
         } else {
-            echo json_encode(["message" => "Erro ao atualizar grupo: " . $stmt->error]);
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Erro ao atualizar grupo: " . $stmt->error]);
         }
         $stmt->close();
     } else {
-        echo json_encode(["message" => "Dados incompletos"]);
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Dados incompletos"]);
     }
 } elseif ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
     if (isset($data['id'])) {
@@ -131,9 +140,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $id);
 
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Grupo eliminado com sucesso"]);
+            echo json_encode(["status" => "success", "message" => "Grupo eliminado com sucesso"]);
         } else {
-            echo json_encode(["message" => "Erro ao eliminar grupo: " . $stmt->error]);
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Erro ao eliminar grupo: " . $stmt->error]);
         }
         $stmt->close();
     } elseif (isset($data['membro_id'])) {
@@ -144,13 +154,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->bind_param("i", $membro_id);
 
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Membro eliminado com sucesso"]);
+            echo json_encode(["status" => "success", "message" => "Membro eliminado com sucesso"]);
         } else {
-            echo json_encode(["message" => "Erro ao eliminar membro: " . $stmt->error]);
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Erro ao eliminar membro: " . $stmt->error]);
         }
         $stmt->close();
     } else {
-        echo json_encode(["message" => "Dados incompletos"]);
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Dados incompletos"]);
     }
 }
 

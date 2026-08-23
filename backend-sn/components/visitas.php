@@ -53,7 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->execute();
         $check_result = stmt_get_result($stmt);
         if ($check_result->num_rows > 0) {
-            echo json_encode(["message" => "Já inscrito para esta refeição", "nome" => $nome_completo]);
+            http_response_code(409);
+            echo json_encode(["status" => "error", "message" => "Já inscrito para esta refeição", "nome" => $nome_completo]);
             exit();
         }
 
@@ -61,13 +62,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("ssiiiiiii", $nome_completo, $data_refeicao, $levar_refeicao, $almoco, $almoco_mais_cedo, $almoco_mais_tarde, $jantar, $jantar_mais_cedo, $jantar_mais_tarde);
         if ($stmt->execute() !== TRUE) {
-            echo json_encode(["message" => "Erro ao adicionar refeição: " . $conn->error]);
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Erro ao adicionar refeição: " . $conn->error]);
             exit();
         }
 
-        echo json_encode(["message" => "Refeição adicionada com sucesso"]);
+        echo json_encode(["status" => "success", "message" => "Refeição adicionada com sucesso"]);
     } else {
-        echo json_encode(["message" => "Dados incompletos"]);
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Dados incompletos"]);
     }
 }
 
@@ -116,12 +119,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $id);
         if ($stmt->execute() === TRUE) {
-            echo json_encode(["message" => "Refeição excluída com sucesso"]);
+            echo json_encode(["status" => "success", "message" => "Refeição excluída com sucesso"]);
         } else {
-            echo json_encode(["message" => "Erro ao excluir refeição: " . $conn->error]);
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "Erro ao excluir refeição: " . $conn->error]);
         }
     } else {
-        echo json_encode(["message" => "ID não fornecido"]);
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "ID não fornecido"]);
     }
 }
 
