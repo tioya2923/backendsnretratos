@@ -74,15 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     $users = array();
 
-    if ($result->num_rows > 0) {
-        // output data of each row (sem o hash da password — nunca deve
-        // sair do servidor, mesmo para chamadas autenticadas)
-        while($row = $result->fetch_assoc()) {
-            unset($row['password']);
-            $users[] = $row;
-        }
-    } else {
-        echo "0 resultados";
+    // output data of each row (sem o hash da password — nunca deve
+    // sair do servidor, mesmo para chamadas autenticadas)
+    while ($row = $result->fetch_assoc()) {
+        unset($row['password']);
+        $users[] = $row;
     }
     echo json_encode($users);
 }
