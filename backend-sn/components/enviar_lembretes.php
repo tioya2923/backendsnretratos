@@ -219,9 +219,9 @@ function enviarLembretes() {
 
         logMsg("[LOG] Processando envios para $tipo (hora: $horaAgora, alvo: $horaEnvio)...");
 
-        // Utilizadores aprovados
+        // Utilizadores aprovados (só id/name — este lembrete é só push, não email)
         $usuarios = [];
-        $sqlU = "SELECT id, name, whatsapp, email FROM usuarios WHERE status = 'aprovado'";
+        $sqlU = "SELECT id, name FROM usuarios WHERE status = 'aprovado'";
         $resU = $conn->query($sqlU);
         if ($resU) {
             while ($row = $resU->fetch_assoc()) {
@@ -241,8 +241,11 @@ function enviarLembretes() {
         }
         logMsg("[LOG] Inscritos para $tipo: " . count($inscritos));
 
+        // Lembrete "de hoje" (almoço/jantar) é só dentro da app — não por email.
+        // O email fica reservado ao lembrete semanal de inscrição
+        // (enviarLembreteInscricao), que é o que efetivamente leva alguém a
+        // agir antes do prazo; isto aqui é só um aviso do próprio dia.
         $tipoLabel       = $tipo === 'almoco' ? 'almoço' : 'jantar';
-        $assunto         = ucfirst($tipoLabel) . " de hoje — " . date('d/m/Y');
         $inscritosIds    = [];
         $naoInscritosIds = [];
 
@@ -252,20 +255,10 @@ function enviarLembretes() {
             $estaInscrito = in_array($nomeComp, $inscritos);
 
             if ($estaInscrito) {
-                $msgHtml = "Olá, <strong>$nomeOriginal</strong>!<br><br>Não te esqueças que estás inscrito para o <strong>$tipoLabel</strong> de hoje.<br>Bom apetite! 🍽️";
                 $inscritosIds[] = $user['id'];
             } else {
-                $msgHtml = "Olá, <strong>$nomeOriginal</strong>.<br><br>Informamos que não te inscreveste para o <strong>$tipoLabel</strong> de hoje.";
                 $naoInscritosIds[] = $user['id'];
             }
-
-            if (!empty($user['email'])) {
-                $ok     = sendEmail($user['email'], $assunto, $msgHtml, true);
-                $status = $ok ? "OK" : "FALHA";
-                logMsg("[$status] Email $tipo: $nomeOriginal");
-            }
-
-            usleep(500000);
         }
 
         // Push para inscritos
