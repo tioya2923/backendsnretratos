@@ -3,9 +3,16 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+require_once '../connect/auth.php';
 
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
+
+// Criar, atualizar ou eliminar grupos/membros é gestão de administração
+// — GET (consultar) continua aberto a qualquer sessão.
+if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'], true)) {
+    requireAdmin($conn);
+}
 
 // Verificar a conexão
 if ($conn->connect_error) {

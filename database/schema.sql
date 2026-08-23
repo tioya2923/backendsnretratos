@@ -70,6 +70,19 @@ CREATE TABLE IF NOT EXISTS admins (
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 -- Nota: não existe administrador criado por omissão. Crie um admin manualmente após aplicar o schema.
 
+-- Sessões de administrador (equivalente a `sessoes`, mas para `admins`).
+-- Criada também em runtime por connect/auth.php, incluída aqui para a
+-- BD ficar completa num só passo.
+CREATE TABLE IF NOT EXISTS admin_sessoes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    admin_id INT NOT NULL,
+    token VARCHAR(64) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_token (token),
+    INDEX idx_admin (admin_id),
+    CONSTRAINT fk_admin_sessoes_admin FOREIGN KEY (admin_id) REFERENCES admins(id_admin) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- ── Grupos e membros (nomes com maiúscula inicial — usados assim no código) ──
 
 CREATE TABLE IF NOT EXISTS Grupos (

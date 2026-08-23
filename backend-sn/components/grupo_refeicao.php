@@ -3,11 +3,18 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+require_once '../connect/auth.php';
 header('Content-Type: application/json');
 
 // Verificar a conexão
 if ($conn->connect_error) {
     die("Conexão falhou: " . $conn->connect_error);
+}
+
+// Criar uma refeição de grupo é gestão de administração — GET
+// (consultar) continua aberto a qualquer sessão.
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireAdmin($conn);
 }
 
 // Adicionar Refeição
