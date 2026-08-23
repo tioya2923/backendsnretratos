@@ -16,5 +16,5 @@
 
 - O workflow `/.github/workflows/cron.yml` chama `components/enviar_lembretes.php` periodicamente.
 - Esse endpoint exige o header `X-Cron-Secret` com o valor de `CRON_SECRET`.
-- Defina `CRON_SECRET` como variável de ambiente no serviço do Render e também como segredo no GitHub Actions.
-- Os valores devem ser idênticos nas duas plataformas para que o cron funcione.
+- Defina `CRON_SECRET` no `.env` do servidor (PTisp) e também como secret no GitHub Actions.
+- Os valores devem ser idênticos nos dois sítios para que o cron funcione.

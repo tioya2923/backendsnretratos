@@ -5,9 +5,6 @@ $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $defaultAllowedOrigins = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    'https://frontendsnretratos.onrender.com',
-    'https://snrefeicoes.pt',
-    'https://www.snrefeicoes.pt',
     'https://sn.paroquiasaonicolau.pt',
 ];
 $allowedOrigins = $defaultAllowedOrigins;
