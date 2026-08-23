@@ -12,10 +12,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configurar PHP 8.2
+      # Tem de ser a MESMA versão que corre na PTisp (8.1). Já aconteceu uma
+      # vez o composer install passar aqui com uma versão do PHP diferente
+      # da produção e instalar uma dependência que só funciona em versões
+      # mais recentes — partiu o site porque a CI não detetou a incompatibilidade.
+      - name: Configurar PHP 8.1
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.2"
+          php-version: "8.1"
           extensions: mysqli, curl, mbstring, gmp, bcmath
           tools: composer:v2
 

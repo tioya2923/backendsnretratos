@@ -67,10 +67,11 @@ define('DB_PASSWORD', $password);
 define('DB_NAME', $db);
 define('DB_PORT', $port);
 
-// Fornecedores como o Aiven exigem TLS na ligação. Ativar com DB_SSL=true.
-// DB_SSL_CA (opcional) deve conter o conteúdo do certificado CA (ca.pem)
-// descarregado da consola do Aiven; sem ele a ligação é cifrada mas o
-// certificado do servidor não é validado.
+// Alguns fornecedores de base de dados exigem TLS na ligação. Ativar com
+// DB_SSL=true. DB_SSL_CA (opcional) deve conter o conteúdo do certificado
+// CA (ca.pem) fornecido por esse fornecedor; sem ele a ligação é cifrada
+// mas o certificado do servidor não é validado. Numa base de dados local
+// no mesmo servidor (o caso normal na PTisp), isto fica desligado.
 $useSsl = filter_var(getenv('DB_SSL') ?: 'false', FILTER_VALIDATE_BOOLEAN);
 
 try {
