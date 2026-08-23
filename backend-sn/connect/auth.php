@@ -62,6 +62,12 @@ function getAuthAdminId(mysqli $conn): ?int {
     $token = getBearerToken();
     if (empty($token)) return null;
 
+    // Sem isto, se a tabela ainda não tivesse sido criada (só acontecia
+    // no login com sucesso, em privacidade.php), $conn->prepare() falhava
+    // e o bind_param() a seguir rebentava com erro fatal (500 sem corpo)
+    // em QUALQUER pedido com um token Bearer presente — mesmo inválido.
+    criarTabelaAdminSessoes($conn);
+
     $stmt = $conn->prepare("SELECT admin_id FROM admin_sessoes WHERE token = ?");
     $stmt->bind_param("s", $token);
     $stmt->execute();
