@@ -47,9 +47,12 @@ function sendWhatsApp($to, $message) {
         }
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
-        // Timeouts ajustados para produção externa
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5); 
-        curl_setopt($ch, CURLOPT_TIMEOUT, 20); 
+        // Timeouts curtos: se a porta estiver bloqueada pela firewall do
+        // servidor (como já aconteceu com o SMTP na PTisp), isto falha
+        // depressa em vez de prender o pedido HTTP inteiro (ex.: registo)
+        // durante dezenas de segundos.
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
 
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -68,9 +71,14 @@ function sendWhatsApp($to, $message) {
         // Se chegamos aqui, houve erro. Vamos logar a falha.
         error_log("Tentativa $tentativaAtual falhou para $to: HTTP $httpCode | Erro: $curlError | Resposta: $response");
 
-        // Se for a última tentativa, desistimos. Caso contrário, esperamos 1 segundo antes de repetir.
-        if ($tentativaAtual < $maxTentativas) {
+        // Repetir só faz sentido para um erro passageiro do servidor
+        // (ex.: 500) — se a ligação em si falhou (porta bloqueada,
+        // servidor em baixo), repetir só duplica a espera para o mesmo
+        // resultado.
+        if (empty($curlError) && $tentativaAtual < $maxTentativas) {
             usleep(1000000); // Espera 1 segundo (1.000.000 microsegundos)
+        } elseif (!empty($curlError)) {
+            break;
         }
     }
 
