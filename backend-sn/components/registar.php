@@ -152,7 +152,7 @@ if (!sendEmail($email, 'Registo efetuado com sucesso', 'O seu registo foi efetua
 
 // -------------------- WHATSAPP --------------------
 try {
-    sendWhatsApp($whatsapp, "Registo feito com sucesso. Aguarde a aprovação do administrador.");
+    sendWhatsApp($whatsapp, 'registo_recebido');
 } catch (Exception $e) {
     error_log("Erro WhatsApp: " . $e->getMessage());
 }

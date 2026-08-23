@@ -237,11 +237,10 @@ if ($method === 'POST') {
     $link = rtrim(getenv('FRONTEND_URL') ?: '', '/') . '/mensagens';
     foreach ($notifUsuarios as $u) {
         $nomeDest = trim($u['name']);
-        $msgWa    = "Olá, $nomeDest! $senderName $rotulo: \"$notifBody\"\n\nVê aqui: $link";
         $bodyHtml = "Olá, <strong>$nomeDest</strong>!<br><br><strong>$senderName</strong> $rotulo:<br><em>\"" . htmlspecialchars($notifBody) . "\"</em><br><br><a href='$link'>Vê a mensagem</a>";
 
         if (!empty($u['whatsapp'])) {
-            sendWhatsApp($u['whatsapp'], $msgWa);
+            sendWhatsApp($u['whatsapp'], 'mensagem_recebida', [$nomeDest, $senderName, $rotulo, $notifBody, $link]);
         }
         if (!empty($u['email'])) {
             sendEmail($u['email'], $assunto, $bodyHtml, true);

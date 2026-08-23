@@ -164,7 +164,7 @@ try {
 
 if (!empty($userWhatsapp)) {
     try {
-        sendWhatsApp($userWhatsapp, "A sua conta foi aprovada! Já pode iniciar sessão: $loginUrl");
+        sendWhatsApp($userWhatsapp, 'conta_aprovada', [$loginUrl]);
     } catch (\Throwable $e) {
         error_log('Erro ao enviar WhatsApp de aprovação: ' . $e->getMessage());
     }

@@ -57,8 +57,7 @@ while ($user = $res->fetch_assoc()) {
 
     // --- WhatsApp ---
     if (!empty($user['whatsapp'])) {
-        $msgWa = "Olá, $nome! $texto";
-        $ok = sendWhatsApp($user['whatsapp'], $msgWa);
+        $ok = sendWhatsApp($user['whatsapp'], 'aviso_geral', [$nome, $texto]);
         if ($ok) {
             echo "  WA     : OK ({$user['whatsapp']})\n";
             $totalWa['ok']++;

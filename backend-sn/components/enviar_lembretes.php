@@ -111,7 +111,9 @@ function enviarLembreteInscricao() {
     $unsubscribeLink = rtrim(getenv('FRONTEND_URL') ?: '', '/') . '/unsubscribe';
     $assunto         = "Recordatório: Inscrição para Refeições";
 
-    $rodapeWa   = "\n\nSe já não fazes parte da nossa comunidade, clica aqui para deixares de receber as nossas mensagens: $unsubscribeLink";
+    // $rodapeWa (equivalente em texto livre) já não é usado aqui: o template
+    // "lembrete_inscricao"/"lembrete_inscricao_repetido" da Cloud API leva
+    // $unsubscribeLink como variável própria (ver chamadas a sendWhatsApp).
     $rodapeHtml = "<br><br><small>Se já não fazes parte da nossa comunidade, <a href='$unsubscribeLink'>clica aqui para deixares de receber as nossas mensagens</a>.</small>";
 
     // À 5ª-feira só reenviamos a quem, desde a 2ª-feira, ainda não se
@@ -146,22 +148,21 @@ function enviarLembreteInscricao() {
             }
 
             if ($tipoAtivo === 'inscricao_quinta') {
-                $msg      = "Olá, $nome! Estás a receber este lembrete de novo porque na segunda-feira já te avisámos e ainda não fizeste a tua inscrição para as próximas refeições. Clica aqui: $link";
+                $templateInscricao = 'lembrete_inscricao_repetido';
                 $bodyHtml = "Olá, <strong>$nome</strong>!<br><br>
                              Estás a receber este lembrete de novo porque na segunda-feira já te avisámos e ainda não fizeste a tua inscrição para as próximas refeições.<br>
                              <a href='$link'>Clica aqui para te inscrever</a>";
             } else {
-                $msg      = "Olá, $nome! Recorda-te de fazer a tua inscrição para as próximas refeições. Clica aqui: $link";
+                $templateInscricao = 'lembrete_inscricao';
                 $bodyHtml = "Olá, <strong>$nome</strong>!<br><br>
                              Recorda-te de fazer a tua inscrição para as próximas refeições.<br>
                              <a href='$link'>Clica aqui para te inscrever</a>";
             }
 
-            $msg      .= $rodapeWa;
             $bodyHtml .= $rodapeHtml;
 
             if (!empty($user['whatsapp'])) {
-                $ok = sendWhatsApp($user['whatsapp'], $msg);
+                $ok = sendWhatsApp($user['whatsapp'], $templateInscricao, [$nome, $link, $unsubscribeLink]);
                 logMsg("[Inscrição WA] " . ($ok ? "OK" : "FALHA") . ": $nome");
             }
 
@@ -262,17 +263,17 @@ function enviarLembretes() {
             $estaInscrito = in_array($nomeComp, $inscritos);
 
             if ($estaInscrito) {
-                $msgWa   = "Olá, $nomeOriginal! Não te esqueças que estás inscrito para o $tipoLabel de hoje. Bom apetite!";
+                $templateRefeicao = 'refeicao_hoje_inscrito';
                 $msgHtml = "Olá, <strong>$nomeOriginal</strong>!<br><br>Não te esqueças que estás inscrito para o <strong>$tipoLabel</strong> de hoje.<br>Bom apetite! 🍽️";
                 $inscritosIds[] = $user['id'];
             } else {
-                $msgWa   = "Olá, $nomeOriginal. Informamos que não te inscreveste para o $tipoLabel de hoje.";
+                $templateRefeicao = 'refeicao_hoje_nao_inscrito';
                 $msgHtml = "Olá, <strong>$nomeOriginal</strong>.<br><br>Informamos que não te inscreveste para o <strong>$tipoLabel</strong> de hoje.";
                 $naoInscritosIds[] = $user['id'];
             }
 
             if (!empty($user['whatsapp'])) {
-                $ok     = sendWhatsApp($user['whatsapp'], $msgWa);
+                $ok     = sendWhatsApp($user['whatsapp'], $templateRefeicao, [$nomeOriginal, $tipoLabel]);
                 $status = $ok ? "OK" : "FALHA";
                 logMsg("[$status] WA $tipo: $nomeOriginal");
             }
@@ -353,12 +354,11 @@ function notificarAtividades() {
         $titulo = ucfirst(mb_strtolower($atv['nome_atividade'], 'UTF-8'));
         $nome   = trim($atv['name']);
 
-        $msgWa   = "Olá, $nome! $titulo começa às $hora. Não te esqueças!";
         $msgHtml = "Olá, <strong>$nome</strong>!<br><br><strong>$titulo</strong> começa às <strong>$hora</strong>. Não te esqueças!";
         $assunto = "Lembrete — $titulo às $hora";
 
         if (!empty($atv['whatsapp'])) {
-            $ok = sendWhatsApp($atv['whatsapp'], $msgWa);
+            $ok = sendWhatsApp($atv['whatsapp'], 'lembrete_atividade', [$nome, $titulo, $hora]);
             logMsg("[Atividade WA " . ($ok ? "OK" : "FALHA") . "] User {$atv['user_id']}: $titulo às $hora");
         }
 
@@ -472,14 +472,13 @@ function notificarAniversarios() {
     foreach ($paraAvisar as $av) {
         $tipoLabel = $av['tipo'] === 'natalicio' ? 'Natalício' : 'Sacerdotal';
         $titulo    = "Aniversariante do Dia: {$av['nome']}";
-        $msg       = "$titulo\n\nHoje é aniversário {$tipoLabel} de {$av['nome']}. Vamos todos parabenizá-lo!";
         $assunto   = $titulo;
 
         foreach ($usuarios as $destinatario) {
             $nomeDest = trim($destinatario['name']);
 
             if (!empty($destinatario['whatsapp'])) {
-                $ok = sendWhatsApp($destinatario['whatsapp'], $msg);
+                $ok = sendWhatsApp($destinatario['whatsapp'], 'aniversario_hoje', [$av['nome'], $tipoLabel]);
                 logMsg("[Aniversário WA " . ($ok ? "OK" : "FALHA") . "] $tipoLabel {$av['nome']} -> $nomeDest");
             }
 
@@ -596,11 +595,10 @@ function lembrarMensagensNaoLidas() {
             $destinatario = $todosUsuarios[$destId];
             $nomeDest     = trim($destinatario['name']);
 
-            $msgWa    = "Olá, $nomeDest! Ainda não leste a mensagem que $remetenteNome te enviou há mais de 24 horas: \"$corpoResumo\"\n\nVê aqui: $link";
             $bodyHtml = "Olá, <strong>$nomeDest</strong>!<br><br>Ainda não leste a mensagem que <strong>$remetenteNome</strong> te enviou há mais de 24 horas:<br><em>\"" . htmlspecialchars($corpoResumo) . "\"</em><br><br><a href='$link'>Vê a mensagem</a>";
 
             if (!empty($destinatario['whatsapp'])) {
-                $ok = sendWhatsApp($destinatario['whatsapp'], $msgWa);
+                $ok = sendWhatsApp($destinatario['whatsapp'], 'mensagem_nao_lida', [$nomeDest, $remetenteNome, $corpoResumo, $link]);
                 logMsg("[Msg lembrete WA " . ($ok ? "OK" : "FALHA") . "] Msg $mensagemId -> $nomeDest");
             }
 
