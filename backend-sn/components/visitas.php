@@ -13,11 +13,14 @@ set_exception_handler('handleUncaughtException'); // Define o manipulador de exc
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+require_once '../connect/auth.php';
 
 // Verificar a conexão
 if ($conn->connect_error) {
     die("Conexão falhou: " . $conn->connect_error);
 }
+
+requireAnySession($conn);
 
 // Adicionar Refeição
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {

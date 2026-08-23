@@ -70,6 +70,22 @@ function getAuthAdminId(mysqli $conn): ?int {
 }
 
 /**
+ * Corta a execução com 401 se não houver nenhuma sessão válida no
+ * pedido atual — de utilizador normal OU de administrador. Para
+ * endpoints de leitura de baixo risco que só precisam de saber que
+ * quem pede já fez login, sem verificar quem é.
+ */
+function requireAnySession(mysqli $conn): void {
+    if (getAuthUserId($conn) !== null) return;
+    if (getAuthAdminId($conn) !== null) return;
+
+    http_response_code(401);
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Não autenticado']);
+    exit;
+}
+
+/**
  * Corta a execução com 403 se não houver uma sessão de administrador
  * válida no pedido atual.
  */

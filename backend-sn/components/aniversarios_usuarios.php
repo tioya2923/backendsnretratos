@@ -11,12 +11,15 @@ date_default_timezone_set('Europe/Lisbon');
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/../connect/cors.php';
+require_once __DIR__ . '/../connect/auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);
     echo json_encode(['error' => 'Método não permitido']);
     exit;
 }
+
+requireAnySession($conn);
 
 $sql = "SELECT name AS nome_completo, data_aniversario, data_aniversario_sacerdotal
         FROM usuarios

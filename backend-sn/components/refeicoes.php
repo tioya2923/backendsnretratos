@@ -23,6 +23,11 @@ if ($conn->connect_error) {
     die("Conexão falhou: " . $conn->connect_error);
 }
 
+// GET e DELETE não verificavam autenticação nenhuma (só o POST
+// verificava, mais abaixo) — qualquer um conseguia ver e apagar
+// inscrições em refeições de outras pessoas.
+requireAnySession($conn);
+
 // Função para verificar o token de autenticação
 function verificarToken($conn) {
     $token = getBearerToken();

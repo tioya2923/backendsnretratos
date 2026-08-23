@@ -3,7 +3,10 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
+require_once '../connect/auth.php';
 header('Content-Type: application/json');
+
+requireAnySession($conn);
 
 // Definir o fuso horário para Portugal
 date_default_timezone_set('Europe/Lisbon');

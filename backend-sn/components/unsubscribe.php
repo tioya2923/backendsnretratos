@@ -13,35 +13,40 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// Captura email via JSON ou form-data
+// Captura email/password via JSON ou form-data
 $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+$password = $_POST['password'] ?? null;
 
-if (!$email) {
+if (!$email || $password === null) {
     $input = json_decode(file_get_contents('php://input'), true);
-    if (isset($input['email'])) {
+    if (!$email && isset($input['email'])) {
         $email = filter_var($input['email'], FILTER_VALIDATE_EMAIL);
+    }
+    if ($password === null && isset($input['password'])) {
+        $password = $input['password'];
     }
 }
 
-if (!$email) {
+if (!$email || empty($password)) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Email inválido.']);
+    echo json_encode(['status' => 'error', 'message' => 'Email e password são obrigatórios.']);
     exit();
 }
 
-// Verifica se existe
-$stmt = $conn->prepare('SELECT id FROM usuarios WHERE email = ?');
+// Confirmar a password — sem isto, bastava saber o email de outra
+// pessoa (por exemplo, visto num grupo do WhatsApp) para lhe apagar a
+// conta, sem confirmação nenhuma.
+$stmt = $conn->prepare('SELECT id, password FROM usuarios WHERE email = ?');
 $stmt->bind_param('s', $email);
 $stmt->execute();
-$stmt->store_result();
+$row = stmt_get_result($stmt)->fetch_assoc();
+$stmt->close();
 
-if ($stmt->num_rows === 0) {
+if (!$row || !password_verify($password, $row['password'])) {
     http_response_code(404);
-    echo json_encode(['status' => 'error', 'message' => 'Email não encontrado.']);
+    echo json_encode(['status' => 'error', 'message' => 'Email ou palavra-passe incorretos.']);
     exit();
 }
-
-$stmt->close();
 
 // Remove
 $stmt = $conn->prepare('DELETE FROM usuarios WHERE email = ?');
