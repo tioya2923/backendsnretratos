@@ -6,7 +6,6 @@ require_once '../connect/auth.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/push_utils.php';
 require_once __DIR__ . '/email_utils.php';
-require_once __DIR__ . '/whatsapp_utils.php';
 
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
@@ -239,9 +238,6 @@ if ($method === 'POST') {
         $nomeDest = trim($u['name']);
         $bodyHtml = "Olá, <strong>$nomeDest</strong>!<br><br><strong>$senderName</strong> $rotulo:<br><em>\"" . htmlspecialchars($notifBody) . "\"</em><br><br><a href='$link'>Vê a mensagem</a>";
 
-        if (!empty($u['whatsapp'])) {
-            sendWhatsApp($u['whatsapp'], 'mensagem_recebida', [$nomeDest, $senderName, $rotulo, $notifBody, $link]);
-        }
         if (!empty($u['email'])) {
             sendEmail($u['email'], $assunto, $bodyHtml, true);
         }

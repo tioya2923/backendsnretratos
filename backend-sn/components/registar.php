@@ -29,7 +29,6 @@ if (!file_exists($autoloadPath)) {
 require_once $autoloadPath;
 require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/../connect/cors.php';
-require_once __DIR__ . '/whatsapp_utils.php';
 require_once __DIR__ . '/email_utils.php';
 
 header('Content-Type: application/json');
@@ -148,13 +147,6 @@ if (!sendEmail('retratospsn@gmail.com', 'Novo registo de utilizador', $bodyAdmin
 
 if (!sendEmail($email, 'Registo efetuado com sucesso', 'O seu registo foi efetuado com sucesso. Aguarde a aprovação do administrador.', true)) {
     error_log("Erro ao enviar email de confirmação de registo para $email");
-}
-
-// -------------------- WHATSAPP --------------------
-try {
-    sendWhatsApp($whatsapp, 'registo_recebido');
-} catch (Exception $e) {
-    error_log("Erro WhatsApp: " . $e->getMessage());
 }
 
 $conn->close();

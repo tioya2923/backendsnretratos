@@ -4,7 +4,6 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/../connect/cors.php';
-require_once __DIR__ . '/whatsapp_utils.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -110,11 +109,10 @@ if ($result->num_rows === 0) {
 
 $user = $result->fetch_assoc();
 $userEmail = $user['email'];
-$userWhatsapp = $user['whatsapp'] ?? '';
 
 // O código de aprovação nunca é limpo depois de usado (fica válido
-// para sempre) — sem isto, reabrir o mesmo link reenviava o email e o
-// WhatsApp de aprovação outra vez, a cada clique.
+// para sempre) — sem isto, reabrir o mesmo link reenviava o email de
+// aprovação outra vez, a cada clique.
 if ($user['status'] === 'aprovado') {
     $loginUrl = $frontendUrl . '/login';
     renderPage(true, 'Já aprovado', 'Esta conta já tinha sido aprovada anteriormente. Pode iniciar sessão.', $loginUrl);
@@ -160,14 +158,6 @@ try {
     $mail->send();
 } catch (Exception $e) {
     error_log('Erro ao enviar email de aprovação: ' . $mail->ErrorInfo);
-}
-
-if (!empty($userWhatsapp)) {
-    try {
-        sendWhatsApp($userWhatsapp, 'conta_aprovada', [$loginUrl]);
-    } catch (\Throwable $e) {
-        error_log('Erro ao enviar WhatsApp de aprovação: ' . $e->getMessage());
-    }
 }
 
 renderPage(true, 'Registo aprovado!', 'A conta foi aprovada com sucesso. Já pode iniciar sessão na aplicação.', $loginUrl);

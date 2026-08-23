@@ -2,7 +2,7 @@
 /**
  * Script de envio em massa — execução única via CLI.
  * Envia uma mensagem personalizada a todos os utilizadores aprovados
- * via WhatsApp, Email e Push Notification.
+ * via Email e Push Notification.
  *
  * Uso: php enviar_mensagem_todos.php "Texto da mensagem"
  */
@@ -21,7 +21,6 @@ if (php_sapi_name() !== 'cli') {
 
 require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
-require_once __DIR__ . '/whatsapp_utils.php';
 require_once __DIR__ . '/email_utils.php';
 require_once __DIR__ . '/push_utils.php';
 
@@ -40,7 +39,6 @@ echo "---------------------\n\n";
 $sql = "SELECT id, name, email, whatsapp FROM usuarios WHERE status = 'aprovado'";
 $res = $conn->query($sql);
 
-$totalWa    = ['ok' => 0, 'falha' => 0, 'sem' => 0];
 $totalEmail = ['ok' => 0, 'falha' => 0, 'sem' => 0];
 $userIds    = [];
 
@@ -54,21 +52,6 @@ while ($user = $res->fetch_assoc()) {
     $userIds[] = $user['id'];
 
     echo "[$nome]\n";
-
-    // --- WhatsApp ---
-    if (!empty($user['whatsapp'])) {
-        $ok = sendWhatsApp($user['whatsapp'], 'aviso_geral', [$nome, $texto]);
-        if ($ok) {
-            echo "  WA     : OK ({$user['whatsapp']})\n";
-            $totalWa['ok']++;
-        } else {
-            echo "  WA     : FALHA ({$user['whatsapp']})\n";
-            $totalWa['falha']++;
-        }
-    } else {
-        echo "  WA     : sem número\n";
-        $totalWa['sem']++;
-    }
 
     // --- Email ---
     if (!empty($user['email'])) {
@@ -105,11 +88,10 @@ sendPushNotification(
 echo "Push: OK\n\n";
 
 // --- Resumo ---
-$total = $totalWa['ok'] + $totalWa['falha'] + $totalWa['sem'];
+$total = $totalEmail['ok'] + $totalEmail['falha'] + $totalEmail['sem'];
 echo "=====================\n";
 echo "RESUMO\n";
 echo "  Utilizadores : $total\n";
-echo "  WhatsApp     : {$totalWa['ok']} OK | {$totalWa['falha']} FALHA | {$totalWa['sem']} sem número\n";
 echo "  Email        : {$totalEmail['ok']} OK | {$totalEmail['falha']} FALHA | {$totalEmail['sem']} sem email\n";
 echo "  Push         : enviado para todos os subscritores\n";
 echo "  Concluído    : " . date('Y-m-d H:i:s') . "\n";
