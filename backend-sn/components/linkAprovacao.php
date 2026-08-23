@@ -112,6 +112,17 @@ $user = $result->fetch_assoc();
 $userEmail = $user['email'];
 $userWhatsapp = $user['whatsapp'] ?? '';
 
+// O código de aprovação nunca é limpo depois de usado (fica válido
+// para sempre) — sem isto, reabrir o mesmo link reenviava o email e o
+// WhatsApp de aprovação outra vez, a cada clique.
+if ($user['status'] === 'aprovado') {
+    $loginUrl = $frontendUrl . '/login';
+    renderPage(true, 'Já aprovado', 'Esta conta já tinha sido aprovada anteriormente. Pode iniciar sessão.', $loginUrl);
+    $stmt->close();
+    $conn->close();
+    exit;
+}
+
 $sqlUpdate = "UPDATE usuarios SET status = 'aprovado' WHERE approval_code = ?";
 $stmtUpdate = $conn->prepare($sqlUpdate);
 $stmtUpdate->bind_param("s", $approvalCode);
@@ -135,6 +146,8 @@ try {
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
     $mail->Port = 465;
     $mail->CharSet = 'UTF-8';
+    $mail->Timeout = 10;
+    $mail->SMTPKeepAlive = false;
 
     $mail->setFrom('retratospsn@gmail.com', 'Paróquia de São Nicolau');
     $mail->addAddress($userEmail);

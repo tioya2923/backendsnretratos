@@ -30,9 +30,7 @@ require_once $autoloadPath;
 require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/../connect/cors.php';
 require_once __DIR__ . '/whatsapp_utils.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+require_once __DIR__ . '/email_utils.php';
 
 header('Content-Type: application/json');
 
@@ -135,64 +133,21 @@ if (!$stmt->execute()) {
 
 $stmt->close();
 
-// -------------------- CONFIGURAR SMTP --------------------
-$mailUser = getenv('MAIL_USERNAME') ?: 'retratospsn@gmail.com';
-$mailPass = getenv('MAIL_PASSWORD') ?: null;
-
-if (!$mailPass) {
-    error_log("ERRO: MAIL_PASSWORD não definido no ambiente");
+// -------------------- EMAILS (admin + utilizador) --------------------
+// Usa o helper partilhado (email_utils.php): mesma configuração SMTP em
+// vez de duplicada duas vezes, e já com timeout curto — sem isto, uma
+// porta SMTP bloqueada (como aconteceu na PTisp) prendia o pedido de
+// registo inteiro durante minutos.
+$bodyAdmin = "
+    O utilizador <strong>$name</strong> registou-se.<br><br>
+    <a href='$approvalUrl'>Clique aqui para aprovar o registo</a>
+";
+if (!sendEmail('retratospsn@gmail.com', 'Novo registo de utilizador', $bodyAdmin, true)) {
+    error_log("Erro ao enviar email de admin para registo de $name");
 }
 
-// -------------------- EMAIL PARA ADMIN --------------------
-try {
-    $mail = new PHPMailer(true);
-    $mail->isSMTP();
-    $mail->Host = 'smtp.gmail.com';
-    $mail->SMTPAuth = true;
-    $mail->Username = $mailUser;
-    $mail->Password = $mailPass;
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-    $mail->Port = 465;
-    $mail->CharSet = 'UTF-8';
-
-    $mail->setFrom($mailUser, 'Paróquia de São Nicolau');
-    $mail->addAddress('retratospsn@gmail.com');
-
-    $mail->isHTML(true);
-    $mail->Subject = 'Novo registo de utilizador';
-    $mail->Body = "
-        O utilizador <strong>$name</strong> registou-se.<br><br>
-        <a href='$approvalUrl'>Clique aqui para aprovar o registo</a>
-    ";
-    $mail->AltBody = "Aprovar registo: $approvalUrl";
-
-    $mail->send();
-} catch (Exception $e) {
-    error_log("Erro email admin: " . $e->getMessage());
-}
-
-// -------------------- EMAIL PARA UTILIZADOR --------------------
-try {
-    $userMail = new PHPMailer(true);
-    $userMail->isSMTP();
-    $userMail->Host = 'smtp.gmail.com';
-    $userMail->SMTPAuth = true;
-    $userMail->Username = $mailUser;
-    $userMail->Password = $mailPass;
-    $userMail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-    $userMail->Port = 465;
-    $userMail->CharSet = 'UTF-8';
-
-    $userMail->setFrom($mailUser, 'Paróquia de São Nicolau');
-    $userMail->addAddress($email);
-
-    $userMail->isHTML(true);
-    $userMail->Subject = 'Registo efetuado com sucesso';
-    $userMail->Body = 'O seu registo foi efetuado com sucesso. Aguarde a aprovação do administrador.';
-
-    $userMail->send();
-} catch (Exception $e) {
-    error_log("Erro email utilizador: " . $e->getMessage());
+if (!sendEmail($email, 'Registo efetuado com sucesso', 'O seu registo foi efetuado com sucesso. Aguarde a aprovação do administrador.', true)) {
+    error_log("Erro ao enviar email de confirmação de registo para $email");
 }
 
 // -------------------- WHATSAPP --------------------

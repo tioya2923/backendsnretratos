@@ -40,6 +40,11 @@ function sendEmail(string $to, string $subject, string $body, bool $isHtml = fal
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port       = 465;
         $mail->CharSet    = 'UTF-8';
+        // Sem isto, uma porta SMTP bloqueada (como aconteceu na PTisp)
+        // fica pendurada minutos em vez de falhar depressa — o pedido
+        // HTTP inteiro (ex.: registo) ficava à espera desse tempo todo.
+        $mail->Timeout       = 10;
+        $mail->SMTPKeepAlive = false;
 
         $mail->setFrom($mailUser, 'Paróquia de São Nicolau');
         $mail->addAddress($to);

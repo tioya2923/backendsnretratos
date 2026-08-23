@@ -5,6 +5,11 @@ RewriteEngine On
 RewriteCond %{HTTP:Authorization} ^(.+)$
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
 
+# connect/ são ficheiros de suporte (ligação à BD, CORS, autenticação) —
+# só devem ser carregados via require_once pelos endpoints em
+# components/, nunca pedidos diretamente pelo browser.
+RewriteRule ^connect/ - [F,L]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [L]

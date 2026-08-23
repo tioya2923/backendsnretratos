@@ -31,10 +31,21 @@ function sendWhatsApp($to, $message) {
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        $headers = [
             'Content-Type: application/json',
             'Content-Length: ' . strlen($payload)
-        ]);
+        ];
+        // Este servidor (bridge de WhatsApp na Hetzner) não recebia
+        // nenhuma credencial — qualquer pessoa que encontrasse o IP no
+        // código público conseguia usá-lo para enviar mensagens. Se
+        // WHATSAPP_API_KEY estiver definida, passa a ser enviada; sem
+        // ela, comporta-se exatamente como antes (não quebra nada até
+        // o servidor da Hetzner ser atualizado para exigir a chave).
+        $apiKey = getenv('WHATSAPP_API_KEY');
+        if ($apiKey) {
+            $headers[] = 'Authorization: Bearer ' . $apiKey;
+        }
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
         // Timeouts ajustados para produção externa
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5); 
