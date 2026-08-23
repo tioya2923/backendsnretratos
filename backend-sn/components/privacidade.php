@@ -47,5 +47,7 @@ if(isset($_POST['email']) && isset($_POST['password'])) {
         }
         $stmt->close();
     }
+} else {
+    echo json_encode(['status' => 'error', 'message' => 'Email e/ou password não fornecidos ou inválidos']);
 }
 ?>
