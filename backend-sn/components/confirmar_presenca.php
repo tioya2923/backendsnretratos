@@ -3,8 +3,18 @@
  * Confirmação de presença numa refeição — o próprio utilizador confirma,
  * dentro da janela de 1h a contar do início da refeição (13h30-14h30 para
  * o almoço; 20h00-21h00 para o jantar, ou 20h30-21h30 ao domingo/feriados,
- * tal como o horário mostrado no mapa de refeições).
+ * tal como o horário mostrado no mapa de refeições). "Mais cedo"/"mais
+ * tarde" têm janelas próprias (1h de desvio), e o Takeaway confirma-se na
+ * véspera — ver janelaConfirmacao()/diaConfirmacao() em presenca_utils.php.
+ *
+ * O nome de cada tipo é exatamente o nome da coluna correspondente em
+ * `refeicoes` — usa-se diretamente para ler a inscrição, sem mapa à parte.
  */
+const TIPOS_CONFIRMACAO_VALIDOS = [
+    'almoco', 'almoco_mais_cedo', 'almoco_mais_tarde',
+    'jantar', 'jantar_mais_cedo', 'jantar_mais_tarde',
+    'levar_refeicao',
+];
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
@@ -41,7 +51,7 @@ if ($method === 'POST') {
     $refeicaoId = isset($data['refeicao_id']) ? (int) $data['refeicao_id'] : 0;
     $tipo       = $data['tipo'] ?? '';
 
-    if ($refeicaoId <= 0 || !in_array($tipo, ['almoco', 'jantar'], true)) {
+    if ($refeicaoId <= 0 || !in_array($tipo, TIPOS_CONFIRMACAO_VALIDOS, true)) {
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Dados inválidos']);
         exit;
@@ -49,7 +59,7 @@ if ($method === 'POST') {
 
     $stmt = $conn->prepare("
         SELECT nome_completo, data, almoco, almoco_mais_cedo, almoco_mais_tarde,
-               jantar, jantar_mais_cedo, jantar_mais_tarde
+               jantar, jantar_mais_cedo, jantar_mais_tarde, levar_refeicao
         FROM refeicoes WHERE id = ?
     ");
     $stmt->bind_param("i", $refeicaoId);
@@ -78,20 +88,17 @@ if ($method === 'POST') {
         exit;
     }
 
-    $inscritoNesteTipo = $tipo === 'almoco'
-        ? ($refeicao['almoco'] || $refeicao['almoco_mais_cedo'] || $refeicao['almoco_mais_tarde'])
-        : ($refeicao['jantar'] || $refeicao['jantar_mais_cedo'] || $refeicao['jantar_mais_tarde']);
-
-    if (!$inscritoNesteTipo) {
+    // O nome do tipo é o nome exato da coluna (ver TIPOS_CONFIRMACAO_VALIDOS).
+    if (!$refeicao[$tipo]) {
         http_response_code(400);
         echo json_encode(['status' => 'error', 'message' => 'Não estás inscrito para esta refeição']);
         exit;
     }
 
-    $dataRefeicao = new DateTime($refeicao['data']);
-    [$horaInicio, $horaFim] = janelaConfirmacao($tipo, $dataRefeicao);
-    $inicio = DateTime::createFromFormat('Y-m-d H:i', $refeicao['data'] . ' ' . $horaInicio);
-    $fim    = DateTime::createFromFormat('Y-m-d H:i', $refeicao['data'] . ' ' . $horaFim);
+    $diaConf = diaConfirmacao($tipo, $refeicao['data']);
+    [$horaInicio, $horaFim] = janelaConfirmacao($tipo, new DateTime($diaConf));
+    $inicio = DateTime::createFromFormat('Y-m-d H:i', "$diaConf $horaInicio");
+    $fim    = DateTime::createFromFormat('Y-m-d H:i', "$diaConf $horaFim");
     $agora  = new DateTime();
 
     if ($agora < $inicio || $agora > $fim) {

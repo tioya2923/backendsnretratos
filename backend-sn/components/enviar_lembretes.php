@@ -625,11 +625,12 @@ function enviarRelatorioQuinzenal() {
     logMsg("[LOG] Iniciando relatório quinzenal de inscrições ($periodoFormatado)...");
 
     // Todas as inscrições do período, para cruzar com as confirmações de
-    // presença — cada linha da tabela refeicoes pode cobrir almoço e
-    // jantar ao mesmo tempo, por isso trata-se cada um separadamente.
+    // presença — cada linha da tabela refeicoes pode cobrir várias
+    // variantes ao mesmo tempo (ex.: almoço normal + takeaway), por isso
+    // trata-se cada uma separadamente.
     $stmtR = $conn->prepare("
         SELECT id, nome_completo, data, almoco, almoco_mais_cedo, almoco_mais_tarde,
-               jantar, jantar_mais_cedo, jantar_mais_tarde
+               jantar, jantar_mais_cedo, jantar_mais_tarde, levar_refeicao
         FROM refeicoes
         WHERE data BETWEEN ? AND ?
         ORDER BY data, nome_completo
@@ -656,6 +657,19 @@ function enviarRelatorioQuinzenal() {
     }
     $stmtC->close();
 
+    // Cada variante é tratada como o seu próprio "tipo" de confirmação —
+    // o nome de cada uma é exatamente o nome da coluna correspondente em
+    // `refeicoes` (mesma convenção usada em confirmar_presenca.php).
+    $tiposPossiveis = [
+        'almoco'            => 'Almoço',
+        'almoco_mais_cedo'  => 'Almoço mais cedo',
+        'almoco_mais_tarde' => 'Almoço mais tarde',
+        'jantar'            => 'Jantar',
+        'jantar_mais_cedo'  => 'Jantar mais cedo',
+        'jantar_mais_tarde' => 'Jantar mais tarde',
+        'levar_refeicao'    => 'Takeaway',
+    ];
+
     $confirmaram       = [];
     $faltaram          = [];
     $nomesComInscricao = [];
@@ -664,18 +678,16 @@ function enviarRelatorioQuinzenal() {
         $nome = trim($r['nome_completo']);
         $nomesComInscricao[mb_strtolower($nome, 'UTF-8')] = true;
 
-        $tiposDaLinha = [];
-        if ($r['almoco'] || $r['almoco_mais_cedo'] || $r['almoco_mais_tarde']) $tiposDaLinha[] = 'almoco';
-        if ($r['jantar'] || $r['jantar_mais_cedo'] || $r['jantar_mais_tarde']) $tiposDaLinha[] = 'jantar';
+        foreach ($tiposPossiveis as $tipo => $tipoLabel) {
+            if (!$r[$tipo]) continue;
 
-        foreach ($tiposDaLinha as $tipo) {
             // Só conta como "confirmou" ou "faltou" depois de a janela
-            // fechar — uma refeição de hoje ainda por acontecer fica de
-            // fora (não se pode dizer que alguém faltou a algo que ainda
-            // não teve oportunidade de confirmar).
+            // fechar — uma refeição de hoje ainda por acontecer (ou um
+            // takeaway cuja véspera ainda não chegou) fica de fora (não se
+            // pode dizer que alguém faltou a algo que ainda não teve
+            // oportunidade de confirmar).
             if (!janelaJaFechou($tipo, $r['data'])) continue;
 
-            $tipoLabel     = $tipo === 'almoco' ? 'Almoço' : 'Jantar';
             $dataFormatada = date('d/m/Y', strtotime($r['data']));
             $entrada       = "$nome — $dataFormatada — $tipoLabel";
 

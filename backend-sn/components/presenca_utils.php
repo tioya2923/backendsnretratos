@@ -32,18 +32,52 @@ function ehFeriadoOuDomingo(DateTime $data): bool {
     return $dataStr === $carnaval || $dataStr === $sextaSanta;
 }
 
-/** Devolve [horaInicio, horaFim] (formato H:i) da janela de confirmação de 1h. */
+/**
+ * Devolve [horaInicio, horaFim] (formato H:i) da janela de confirmação de 1h
+ * para cada variante de refeição. "Mais cedo"/"mais tarde" não têm hora
+ * exata registada (são só uma marcação, sem hora) — usa-se por convenção
+ * 1h de desvio face ao horário normal, em ambos os sentidos.
+ */
 function janelaConfirmacao(string $tipo, DateTime $data): array {
-    if ($tipo === 'almoco') {
-        return ['13:30', '14:30'];
+    $feriadoOuDomingo = ehFeriadoOuDomingo($data);
+
+    switch ($tipo) {
+        case 'almoco_mais_cedo':
+            return ['12:30', '13:30'];
+        case 'almoco_mais_tarde':
+            return ['14:30', '15:30'];
+        case 'almoco':
+            return ['13:30', '14:30'];
+
+        case 'jantar_mais_cedo':
+            return $feriadoOuDomingo ? ['19:30', '20:30'] : ['19:00', '20:00'];
+        case 'jantar_mais_tarde':
+            return $feriadoOuDomingo ? ['21:30', '22:30'] : ['21:00', '22:00'];
+        case 'jantar':
+        case 'levar_refeicao':
+            // Takeaway é levantado à hora normal do jantar — mas na véspera
+            // da data da refeição (ver diaConfirmacao()).
+            return $feriadoOuDomingo ? ['20:30', '21:30'] : ['20:00', '21:00'];
+
+        default:
+            return $feriadoOuDomingo ? ['20:30', '21:30'] : ['20:00', '21:00'];
     }
-    return ehFeriadoOuDomingo($data) ? ['20:30', '21:30'] : ['20:00', '21:00'];
 }
 
-/** true se a janela de confirmação de $tipo, no dia $dataStr (Y-m-d), já fechou. */
-function janelaJaFechou(string $tipo, string $dataStr): bool {
-    $data = new DateTime($dataStr);
+/**
+ * Dia em que a confirmação de $tipo deve ser feita. Igual ao dia da
+ * refeição para todos os tipos, exceto Takeaway — levantado na véspera.
+ */
+function diaConfirmacao(string $tipo, string $dataRefeicaoStr): string {
+    if ($tipo !== 'levar_refeicao') return $dataRefeicaoStr;
+    return (new DateTime($dataRefeicaoStr))->modify('-1 day')->format('Y-m-d');
+}
+
+/** true se a janela de confirmação de $tipo, para a refeição de $dataRefeicaoStr (Y-m-d), já fechou. */
+function janelaJaFechou(string $tipo, string $dataRefeicaoStr): bool {
+    $diaConf = diaConfirmacao($tipo, $dataRefeicaoStr);
+    $data = new DateTime($diaConf);
     [, $horaFim] = janelaConfirmacao($tipo, $data);
-    $fim = DateTime::createFromFormat('Y-m-d H:i', "$dataStr $horaFim");
+    $fim = DateTime::createFromFormat('Y-m-d H:i', "$diaConf $horaFim");
     return new DateTime() > $fim;
 }
