@@ -10,6 +10,7 @@ require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/email_utils.php';
 require_once __DIR__ . '/push_utils.php';
+require_once __DIR__ . '/presenca_utils.php';
 
 // Só aceita chamadas do disparador de cron (evita que qualquer pessoa na
 // internet dispare envios em massa de email a todos os utilizadores).
@@ -623,50 +624,78 @@ function enviarRelatorioQuinzenal() {
 
     logMsg("[LOG] Iniciando relatório quinzenal de inscrições ($periodoFormatado)...");
 
-    // Nomes com pelo menos uma inscrição de refeição no período (qualquer
-    // tipo — almoço, jantar, takeaway, etc.)
-    $inscritosSet = [];
-    $stmtR = $conn->prepare("SELECT DISTINCT nome_completo FROM refeicoes WHERE data BETWEEN ? AND ?");
+    // Todas as inscrições do período, para cruzar com as confirmações de
+    // presença — cada linha da tabela refeicoes pode cobrir almoço e
+    // jantar ao mesmo tempo, por isso trata-se cada um separadamente.
+    $stmtR = $conn->prepare("
+        SELECT id, nome_completo, data, almoco, almoco_mais_cedo, almoco_mais_tarde,
+               jantar, jantar_mais_cedo, jantar_mais_tarde
+        FROM refeicoes
+        WHERE data BETWEEN ? AND ?
+        ORDER BY data, nome_completo
+    ");
     $stmtR->bind_param("ss", $inicio, $fim);
     $stmtR->execute();
-    $resR = stmt_get_result($stmtR);
-    while ($row = $resR->fetch_assoc()) {
-        $inscritosSet[] = mb_strtolower(trim($row['nome_completo']), 'UTF-8');
-    }
+    $refeicoesPeriodo = stmt_get_result($stmtR)->fetch_all(MYSQLI_ASSOC);
     $stmtR->close();
 
-    // Separa todos os utilizadores aprovados em inscritos/não inscritos
-    $inscritos    = [];
-    $naoInscritos = [];
-    $resU = $conn->query("SELECT name FROM usuarios WHERE status = 'aprovado' ORDER BY name");
-    while ($row = $resU->fetch_assoc()) {
-        $nome = trim($row['name']);
-        if (in_array(mb_strtolower($nome, 'UTF-8'), $inscritosSet, true)) {
-            $inscritos[] = $nome;
-        } else {
-            $naoInscritos[] = $nome;
-        }
-    }
-
-    // Confirmações de presença (tabela confirmacoes_presenca, ver
-    // confirmar_presenca.php) feitas dentro do mesmo período de 15 dias.
-    $confirmacoes = [];
+    // Confirmações já feitas no período — carregadas todas de uma vez
+    // (refeicao_id|tipo => true) para consulta rápida no ciclo abaixo.
+    $confirmadosSet = [];
     $stmtC = $conn->prepare("
-        SELECT r.nome_completo, r.data, c.tipo
+        SELECT c.refeicao_id, c.tipo
         FROM confirmacoes_presenca c
         JOIN refeicoes r ON r.id = c.refeicao_id
         WHERE r.data BETWEEN ? AND ?
-        ORDER BY r.data, r.nome_completo
     ");
     $stmtC->bind_param("ss", $inicio, $fim);
     $stmtC->execute();
     $resC = stmt_get_result($stmtC);
     while ($row = $resC->fetch_assoc()) {
-        $tipoLabel = $row['tipo'] === 'almoco' ? 'Almoço' : 'Jantar';
-        $dataFormatada = date('d/m/Y', strtotime($row['data']));
-        $confirmacoes[] = trim($row['nome_completo']) . " — $dataFormatada — $tipoLabel";
+        $confirmadosSet[$row['refeicao_id'] . '|' . $row['tipo']] = true;
     }
     $stmtC->close();
+
+    $confirmaram       = [];
+    $faltaram          = [];
+    $nomesComInscricao = [];
+
+    foreach ($refeicoesPeriodo as $r) {
+        $nome = trim($r['nome_completo']);
+        $nomesComInscricao[mb_strtolower($nome, 'UTF-8')] = true;
+
+        $tiposDaLinha = [];
+        if ($r['almoco'] || $r['almoco_mais_cedo'] || $r['almoco_mais_tarde']) $tiposDaLinha[] = 'almoco';
+        if ($r['jantar'] || $r['jantar_mais_cedo'] || $r['jantar_mais_tarde']) $tiposDaLinha[] = 'jantar';
+
+        foreach ($tiposDaLinha as $tipo) {
+            // Só conta como "confirmou" ou "faltou" depois de a janela
+            // fechar — uma refeição de hoje ainda por acontecer fica de
+            // fora (não se pode dizer que alguém faltou a algo que ainda
+            // não teve oportunidade de confirmar).
+            if (!janelaJaFechou($tipo, $r['data'])) continue;
+
+            $tipoLabel     = $tipo === 'almoco' ? 'Almoço' : 'Jantar';
+            $dataFormatada = date('d/m/Y', strtotime($r['data']));
+            $entrada       = "$nome — $dataFormatada — $tipoLabel";
+
+            if (isset($confirmadosSet["{$r['id']}|$tipo"])) {
+                $confirmaram[] = $entrada;
+            } else {
+                $faltaram[] = $entrada;
+            }
+        }
+    }
+
+    // Não se inscreveram nenhuma vez no período (nenhuma linha em refeicoes)
+    $naoInscritos = [];
+    $resU = $conn->query("SELECT name FROM usuarios WHERE status = 'aprovado' ORDER BY name");
+    while ($row = $resU->fetch_assoc()) {
+        $nome = trim($row['name']);
+        if (!isset($nomesComInscricao[mb_strtolower($nome, 'UTF-8')])) {
+            $naoInscritos[] = $nome;
+        }
+    }
 
     $paraLista = function (array $itens) {
         if (empty($itens)) return '<p><em>Ninguém.</em></p>';
@@ -677,12 +706,12 @@ function enviarRelatorioQuinzenal() {
     $body = "
         <h2>Relatório quinzenal de inscrições</h2>
         <p>Período: <strong>$periodoFormatado</strong></p>
-        <h3>Inscreveram-se pelo menos uma vez (" . count($inscritos) . ")</h3>
-        " . $paraLista($inscritos) . "
-        <h3>Não se inscreveram nenhuma vez (" . count($naoInscritos) . ")</h3>
+        <h3>Confirmaram presença (" . count($confirmaram) . ")</h3>
+        " . $paraLista($confirmaram) . "
+        <h3>Faltaram — inscreveram-se mas não confirmaram presença (" . count($faltaram) . ")</h3>
+        " . $paraLista($faltaram) . "
+        <h3>Não se inscreveram em nenhuma refeição (" . count($naoInscritos) . ")</h3>
         " . $paraLista($naoInscritos) . "
-        <h3>Confirmações de presença (" . count($confirmacoes) . ")</h3>
-        " . $paraLista($confirmacoes) . "
     ";
 
     $resAdmins = $conn->query("SELECT email_admin FROM admins");
@@ -694,7 +723,7 @@ function enviarRelatorioQuinzenal() {
         if ($ok) $enviados++;
     }
 
-    logMsg("[Relatório Quinzenal] Enviado a $enviados administrador(es). Inscritos: " . count($inscritos) . " | Não inscritos: " . count($naoInscritos) . " | Confirmações: " . count($confirmacoes));
+    logMsg("[Relatório Quinzenal] Enviado a $enviados administrador(es). Confirmaram: " . count($confirmaram) . " | Faltaram: " . count($faltaram) . " | Não se inscreveram: " . count($naoInscritos));
 }
 
 // ---------------------------------------------------------------------------

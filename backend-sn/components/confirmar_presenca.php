@@ -10,6 +10,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
 require_once '../connect/auth.php';
+require_once __DIR__ . '/presenca_utils.php';
 
 header('Content-Type: application/json');
 date_default_timezone_set('Europe/Lisbon');
@@ -25,40 +26,6 @@ function criarTabelaConfirmacoes($conn) {
     ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 }
 criarTabelaConfirmacoes($conn);
-
-/**
- * Domingo de Páscoa — mesma fórmula (aproximada) já usada no frontend
- * (InscritosRefeicoes.jsx) para decidir o horário do jantar; replicada
- * aqui só para os dois horários (mostrado e confirmável) baterem certo.
- */
-function calcularPascoa(int $ano): DateTime {
-    $pascoa = new DateTime("$ano-03-31");
-    $diaSemana = (int) $pascoa->format('w'); // 0 = domingo, igual ao getDay() do JS
-    $pascoa->modify('+' . (7 - $diaSemana) . ' days');
-    return $pascoa;
-}
-
-function ehFeriadoOuDomingo(DateTime $data): bool {
-    if ((int) $data->format('w') === 0) return true;
-
-    $fixos = ['01/01', '25/04', '01/05', '10/06', '13/06', '15/08', '05/10', '01/11', '01/12', '08/12', '25/12'];
-    if (in_array($data->format('d/m'), $fixos, true)) return true;
-
-    $pascoa     = calcularPascoa((int) $data->format('Y'));
-    $carnaval   = (clone $pascoa)->modify('-47 days')->format('Y-m-d');
-    $sextaSanta = (clone $pascoa)->modify('-2 days')->format('Y-m-d');
-    $dataStr    = $data->format('Y-m-d');
-
-    return $dataStr === $carnaval || $dataStr === $sextaSanta;
-}
-
-/** Devolve [horaInicio, horaFim] (formato H:i) da janela de confirmação de 1h. */
-function janelaConfirmacao(string $tipo, DateTime $data): array {
-    if ($tipo === 'almoco') {
-        return ['13:30', '14:30'];
-    }
-    return ehFeriadoOuDomingo($data) ? ['20:30', '21:30'] : ['20:00', '21:00'];
-}
 
 $method = $_SERVER['REQUEST_METHOD'];
 
