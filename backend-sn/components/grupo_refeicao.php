@@ -4,12 +4,15 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
 require_once '../connect/auth.php';
+require_once __DIR__ . '/grupos_utils.php';
 header('Content-Type: application/json');
 
 // Verificar a conexão
 if ($conn->connect_error) {
     die("Conexão falhou: " . $conn->connect_error);
 }
+
+garantirColunaNumeroPessoas($conn);
 
 // Criar uma refeição de grupo é gestão de administração — GET
 // (consultar) continua aberto a qualquer sessão.

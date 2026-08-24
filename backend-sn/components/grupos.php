@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 require_once '../connect/server.php';
 require_once '../connect/cors.php';
 require_once '../connect/auth.php';
+require_once __DIR__ . '/grupos_utils.php';
 
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
@@ -18,6 +19,8 @@ if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'], true)) {
 if ($conn->connect_error) {
     die("Conexão falhou: " . $conn->connect_error);
 }
+
+garantirColunaNumeroPessoas($conn);
 
 // Buscar Grupos com o total de membros
 if ($_SERVER['REQUEST_METHOD'] == 'GET' && !isset($_GET['grupo_id'])) {
