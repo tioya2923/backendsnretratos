@@ -102,22 +102,20 @@ if ($stmt->num_rows > 0) {
 $stmt->close();
 
 // -------------------- INSERIR UTILIZADOR --------------------
-$approvalCode = bin2hex(random_bytes(16));
-$backendUrl = rtrim(getenv('BACKEND_URL') ?: '', '/');
-$approvalUrl = "$backendUrl/components/linkAprovacao.php?code=$approvalCode";
-
+// A aprovação do administrador deixou de ser exigida — a conta fica
+// logo 'aprovado' e o utilizador consegue iniciar sessão de imediato
+// (login.php só deixa entrar contas com este status).
 $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
 $stmt = $conn->prepare("
-    INSERT INTO usuarios (name, email, password, status, approval_code, data_aniversario, data_aniversario_sacerdotal)
-    VALUES (?, ?, ?, 'pendente', ?, ?, ?)
+    INSERT INTO usuarios (name, email, password, status, data_aniversario, data_aniversario_sacerdotal)
+    VALUES (?, ?, ?, 'aprovado', ?, ?)
 ");
 $stmt->bind_param(
-    "ssssss",
+    "sssss",
     $name,
     $email,
     $passwordHash,
-    $approvalCode,
     $dataAniversario,
     $dataAniversarioSacerdotal
 );
@@ -135,15 +133,16 @@ $stmt->close();
 // vez de duplicada duas vezes, e já com timeout curto — sem isto, uma
 // porta SMTP bloqueada (como aconteceu na PTisp) prendia o pedido de
 // registo inteiro durante minutos.
+// Aviso ao admin é só informativo agora — a conta já está ativa, não
+// precisa de nenhuma ação para o utilizador poder entrar.
 $bodyAdmin = "
-    O utilizador <strong>$name</strong> registou-se.<br><br>
-    <a href='$approvalUrl'>Clique aqui para aprovar o registo</a>
+    O utilizador <strong>$name</strong> registou-se e a conta já está ativa (não é necessária aprovação).
 ";
 if (!sendEmail('retratospsn@gmail.com', 'Novo registo de utilizador', $bodyAdmin, true)) {
     error_log("Erro ao enviar email de admin para registo de $name");
 }
 
-if (!sendEmail($email, 'Registo efetuado com sucesso', 'O seu registo foi efetuado com sucesso. Aguarde a aprovação do administrador.', true)) {
+if (!sendEmail($email, 'Registo efetuado com sucesso', 'O seu registo foi efetuado com sucesso. Já pode iniciar sessão.', true)) {
     error_log("Erro ao enviar email de confirmação de registo para $email");
 }
 
@@ -151,6 +150,6 @@ $conn->close();
 
 echo json_encode([
     'status' => 'success',
-    'message' => 'Registo feito com sucesso. Aguarde pela aprovação do Administrador.'
+    'message' => 'Registo feito com sucesso. Já pode iniciar sessão.'
 ]);
 exit;
