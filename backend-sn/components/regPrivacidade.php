@@ -10,13 +10,42 @@ header('Content-Type: application/json');
 
 // Este endpoint cria uma conta de administrador — inclui potencialmente
 // is_super=1, ou seja, controlo total da aplicação. Nunca deve ficar
-// aberto ao público: exige o mesmo tipo de segredo partilhado já usado
-// para o envio de push em massa (components/send_push.php).
+// aberto ao público. Dois caminhos possíveis:
+//   1) o segredo de servidor (ADMIN_REGISTRATION_SECRET) — para scripts/
+//      bootstrap sem sessão nenhuma, mesmo padrão já usado no envio de
+//      push em massa (components/send_push.php);
+//   2) uma sessão de administrador super — o caminho normal, usado pela
+//      própria app (AdPrivacidade.jsx).
 $adminRegSecret = getenv('ADMIN_REGISTRATION_SECRET');
-if (empty($adminRegSecret) || !hash_equals($adminRegSecret, getBearerToken())) {
-    http_response_code(403);
-    echo json_encode(['error' => 'Acesso negado']);
-    exit;
+$viaSecret = !empty($adminRegSecret) && hash_equals($adminRegSecret, getBearerToken());
+
+if (!$viaSecret) {
+    $currentAdminId = getAuthAdminId($conn);
+    if ($currentAdminId === null) {
+        http_response_code(401);
+        echo json_encode('Não autenticado');
+        exit;
+    }
+
+    // Se ainda não existir nenhum super administrador, qualquer admin
+    // autenticado pode criar o primeiro — evita um beco sem saída em que
+    // ninguém consegue promover ninguém.
+    $resSupers = $conn->query("SELECT COUNT(*) AS total FROM admins WHERE is_super = 1");
+    $totalSupers = $resSupers ? (int) ($resSupers->fetch_assoc()['total'] ?? 0) : 0;
+
+    if ($totalSupers > 0) {
+        $stmtSuper = $conn->prepare("SELECT is_super FROM admins WHERE id_admin = ?");
+        $stmtSuper->bind_param("i", $currentAdminId);
+        $stmtSuper->execute();
+        $rowSuper = stmt_get_result($stmtSuper)->fetch_assoc();
+        $stmtSuper->close();
+
+        if (!$rowSuper || !$rowSuper['is_super']) {
+            http_response_code(403);
+            echo json_encode('Apenas super administradores podem inserir outros administradores');
+            exit;
+        }
+    }
 }
 
 // Sanitizar entradas
