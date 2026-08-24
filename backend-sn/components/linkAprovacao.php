@@ -4,9 +4,7 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../connect/server.php';
 require_once __DIR__ . '/../connect/cors.php';
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+require_once __DIR__ . '/email_utils.php';
 
 // cors.php define Content-Type: application/json por omissão — esta página
 // devolve HTML, por isso tem de substituir esse header.
@@ -134,30 +132,20 @@ if (!$stmtUpdate->execute()) {
 
 $loginUrl = $frontendUrl . '/login';
 
-$mail = new PHPMailer(true);
-try {
-    $mail->isSMTP();
-    $mail->Host = 'smtp.gmail.com';
-    $mail->SMTPAuth = true;
-    $mail->Username = getenv('MAIL_USERNAME');
-    $mail->Password = getenv('MAIL_PASSWORD');
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-    $mail->Port = 465;
-    $mail->CharSet = 'UTF-8';
-    $mail->Timeout = 10;
-    $mail->SMTPKeepAlive = false;
-
-    $mail->setFrom('retratospsn@gmail.com', 'Paróquia de São Nicolau');
-    $mail->addAddress($userEmail);
-
-    $mail->isHTML(true);
-    $mail->Subject = 'Conta aprovada!';
-    $mail->Body = "Parabéns, registo aprovado! <a href='$loginUrl'>Iniciar sessão</a><br>";
-    $mail->AltBody = "Parabéns, registo aprovado! Iniciar sessão: $loginUrl";
-
-    $mail->send();
-} catch (Exception $e) {
-    error_log('Erro ao enviar email de aprovação: ' . $mail->ErrorInfo);
+// Nota: este fluxo de aprovação por email está obsoleto desde que o
+// registo passou a ser automático (registar.php já não gera
+// approval_code nenhum) — mantido só por segurança, caso ainda exista
+// algum link antigo por aí.
+$erroEnvio = null;
+$okEnvio = sendEmail(
+    $userEmail,
+    'Conta aprovada!',
+    "Parabéns, registo aprovado! <a href='$loginUrl'>Iniciar sessão</a><br>",
+    true,
+    $erroEnvio
+);
+if (!$okEnvio) {
+    error_log("Erro ao enviar email de aprovação para $userEmail: $erroEnvio");
 }
 
 renderPage(true, 'Registo aprovado!', 'A conta foi aprovada com sucesso. Já pode iniciar sessão na aplicação.', $loginUrl);

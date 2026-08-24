@@ -1,7 +1,7 @@
 <?php
 /**
  * Script de Cron: Envio de Lembretes de Refeições e Inscrição
- * via Email (PHPMailer) e Push Notification.
+ * via Email (API da Brevo) e Push Notification.
  */
 
 date_default_timezone_set('Europe/Lisbon');

@@ -1,14 +1,14 @@
 <?php
 /**
- * Utilitário de email via PHPMailer / Gmail SMTP.
+ * Utilitário de email via API HTTP da Brevo (antes usava PHPMailer/Gmail
+ * SMTP — a porta SMTP de saída está bloqueada na PTisp, confirmado ao vivo:
+ * "SMTP Error: Could not connect to SMTP host". A API da Brevo usa HTTPS
+ * (porta 443), que não tem esse bloqueio.
  * Usar em cron scripts e outros componentes do backend.
  */
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
 /**
- * Envia um email via Gmail SMTP.
+ * Envia um email via a API da Brevo.
  *
  * @param string $to      Endereço de destino
  * @param string $subject Assunto
@@ -23,48 +23,58 @@ function sendEmail(string $to, string $subject, string $body, bool $isHtml = fal
         return false;
     }
 
-    $mailUser = getenv('MAIL_USERNAME') ?: 'retratospsn@gmail.com';
-    $mailPass = getenv('MAIL_PASSWORD');
-
-    if (!$mailPass) {
-        $erro = 'MAIL_PASSWORD não configurado';
+    $apiKey = getenv('BREVO_API_KEY');
+    if (!$apiKey) {
+        $erro = 'BREVO_API_KEY não configurado';
         error_log("sendEmail: $erro.");
         return false;
     }
 
-    try {
-        $mail = new PHPMailer(true);
-        $mail->isSMTP();
-        $mail->Host       = 'smtp.gmail.com';
-        $mail->SMTPAuth   = true;
-        $mail->Username   = $mailUser;
-        $mail->Password   = $mailPass;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-        $mail->Port       = 465;
-        $mail->CharSet    = 'UTF-8';
-        // Sem isto, uma porta SMTP bloqueada (como aconteceu na PTisp)
-        // fica pendurada minutos em vez de falhar depressa — o pedido
-        // HTTP inteiro (ex.: registo) ficava à espera desse tempo todo.
-        $mail->Timeout       = 10;
-        $mail->SMTPKeepAlive = false;
+    // Tem de ser um remetente verificado na conta Brevo (single sender ou
+    // domínio verificado) — senão a API recusa o pedido.
+    $remetenteEmail = getenv('MAIL_USERNAME') ?: 'retratospsn@gmail.com';
 
-        $mail->setFrom($mailUser, 'Paróquia de São Nicolau');
-        $mail->addAddress($to);
+    $payload = [
+        'sender'      => ['name' => 'Paróquia de São Nicolau', 'email' => $remetenteEmail],
+        'to'          => [['email' => $to]],
+        'subject'     => $subject,
+        'htmlContent' => $isHtml ? $body : ('<pre style="font-family:inherit;white-space:pre-wrap">' . htmlspecialchars($body) . '</pre>'),
+        'textContent' => $isHtml ? strip_tags($body) : $body,
+    ];
 
-        $mail->isHTML($isHtml);
-        $mail->Subject = $subject;
-        $mail->Body    = $body;
-        if ($isHtml) {
-            $mail->AltBody = strip_tags($body);
-        }
+    $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode($payload),
+        CURLOPT_HTTPHEADER     => [
+            'accept: application/json',
+            'api-key: ' . $apiKey,
+            'content-type: application/json',
+        ],
+        // Timeout curto: uma API HTTPS lenta/em baixo não deve prender o
+        // pedido que disparou o envio (mesma razão de ser da fila).
+        CURLOPT_TIMEOUT        => 10,
+    ]);
 
-        $mail->send();
-        return true;
-    } catch (Exception $e) {
-        $erro = $e->getMessage();
-        error_log("sendEmail falhou para $to: $erro");
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErro = curl_error($ch);
+    curl_close($ch);
+
+    if ($response === false) {
+        $erro = "Falha de rede: $curlErro";
+        error_log("sendEmail (Brevo) falhou para $to: $erro");
         return false;
     }
+
+    if ($httpCode >= 200 && $httpCode < 300) {
+        return true;
+    }
+
+    $erro = "HTTP $httpCode: $response";
+    error_log("sendEmail (Brevo) falhou para $to: $erro");
+    return false;
 }
 
 /**
