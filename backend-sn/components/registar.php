@@ -127,45 +127,26 @@ if (!$stmt->execute()) {
 }
 
 $stmt->close();
+
+// -------------------- EMAILS (admin + utilizador) — em fila --------------------
+// fastcgi_finish_request() foi tentado antes para responder já e mandar os
+// emails a seguir "em segundo plano", mas medido ao vivo não fez diferença
+// nenhuma (continuava a demorar os mesmos ~20s) — o PHP deste servidor não
+// deve correr sob um SAPI que suporte essa função. Em vez disso, os emails
+// nunca chegam a ser tentados neste pedido: só ficam em fila (uma tabela,
+// sem tocar em SMTP) e o cron (enviar_lembretes.php, a cada 5 min) é que os
+// envia a sério, com processarEmailsPendentes(). A conta já está criada e
+// ativa neste ponto, por isso não há razão nenhuma para o registo esperar.
+$bodyAdmin = "
+    O utilizador <strong>$name</strong> registou-se e a conta já está ativa (não é necessária aprovação).
+";
+enfileirarEmail($conn, 'retratospsn@gmail.com', 'Novo registo de utilizador', $bodyAdmin, true);
+enfileirarEmail($conn, $email, 'Registo efetuado com sucesso', 'O seu registo foi efetuado com sucesso. Já pode iniciar sessão.', true);
+
 $conn->close();
 
-// -------------------- RESPONDER JÁ, EMAILS DEPOIS --------------------
-// A conta já está criada e ativa neste ponto — o utilizador não precisa de
-// esperar pelos emails para poder continuar. Antes, os dois sendEmail()
-// abaixo corriam ANTES desta resposta: com a porta SMTP da PTisp bloqueada
-// (timeout de 10s cada), isso prendia o registo inteiro até ~20s. Devolver
-// a resposta já e só depois enviar os emails corta isso para o tempo real
-// do pedido (bem abaixo de 1s).
 echo json_encode([
     'status' => 'success',
     'message' => 'Registo feito com sucesso. Já pode iniciar sessão.'
 ]);
-
-// fastcgi_finish_request() entrega a resposta ao browser e fecha a ligação,
-// mas o script continua a correr a seguir — é isto que torna os emails
-// "em segundo plano". Só existe sob PHP-FPM; noutros SAPIs (ex.: mod_php)
-// simplesmente não existe, e os emails voltam a correr antes de terminar
-// (mais lento, mas nunca quebra nada).
-if (function_exists('fastcgi_finish_request')) {
-    fastcgi_finish_request();
-}
-
-// -------------------- EMAILS (admin + utilizador) --------------------
-// Usa o helper partilhado (email_utils.php): mesma configuração SMTP em
-// vez de duplicada duas vezes, e já com timeout curto — sem isto, uma
-// porta SMTP bloqueada (como aconteceu na PTisp) prendia o pedido de
-// registo inteiro durante minutos.
-// Aviso ao admin é só informativo agora — a conta já está ativa, não
-// precisa de nenhuma ação para o utilizador poder entrar.
-$bodyAdmin = "
-    O utilizador <strong>$name</strong> registou-se e a conta já está ativa (não é necessária aprovação).
-";
-if (!sendEmail('retratospsn@gmail.com', 'Novo registo de utilizador', $bodyAdmin, true)) {
-    error_log("Erro ao enviar email de admin para registo de $name");
-}
-
-if (!sendEmail($email, 'Registo efetuado com sucesso', 'O seu registo foi efetuado com sucesso. Já pode iniciar sessão.', true)) {
-    error_log("Erro ao enviar email de confirmação de registo para $email");
-}
-
 exit;

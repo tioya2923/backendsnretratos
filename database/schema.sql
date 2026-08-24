@@ -208,6 +208,21 @@ CREATE TABLE IF NOT EXISTS relatorio_quinzenal_log (
     enviado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Fila de emails (enfileirarEmail()/processarEmailsPendentes(), ambas em
+-- email_utils.php / enviar_lembretes.php) — usada por endpoints que não
+-- podem esperar pelo SMTP (bloqueado na PTisp) antes de responder, ex.:
+-- registar.php.
+CREATE TABLE IF NOT EXISTS emails_pendentes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    destinatario VARCHAR(255) NOT NULL,
+    assunto VARCHAR(255) NOT NULL,
+    corpo MEDIUMTEXT NOT NULL,
+    is_html TINYINT(1) NOT NULL DEFAULT 1,
+    tentativas INT NOT NULL DEFAULT 0,
+    enviado_em TIMESTAMP NULL DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS push_subscriptions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,

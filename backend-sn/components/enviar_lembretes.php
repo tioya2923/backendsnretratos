@@ -698,6 +698,51 @@ function enviarRelatorioQuinzenal() {
 }
 
 // ---------------------------------------------------------------------------
+// Processa a fila de emails (ver enfileirarEmail() em email_utils.php) —
+// usada por endpoints como registar.php que não podem esperar pelo SMTP
+// (bloqueado na PTisp) antes de responder ao pedido que os disparou.
+// ---------------------------------------------------------------------------
+function processarEmailsPendentes() {
+    global $conn;
+
+    criarTabelaEmailsPendentes($conn);
+
+    // Limite por disparo: o cron corre a cada 5 min, e cada tentativa
+    // falhada pode demorar até ao Timeout do SMTP (10s) — um lote grande
+    // arriscava-se a ainda estar a processar quando o próximo disparo
+    // chegasse. Desiste ao fim de 5 tentativas falhadas (fica só em log).
+    $res = $conn->query("
+        SELECT id, destinatario, assunto, corpo, is_html
+        FROM emails_pendentes
+        WHERE enviado_em IS NULL AND tentativas < 5
+        ORDER BY id
+        LIMIT 10
+    ");
+    $emails = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+
+    if (empty($emails)) return;
+
+    $enviados = 0;
+    foreach ($emails as $row) {
+        $ok = sendEmail($row['destinatario'], $row['assunto'], $row['corpo'], (bool) $row['is_html']);
+        if ($ok) {
+            $upd = $conn->prepare("UPDATE emails_pendentes SET enviado_em = NOW() WHERE id = ?");
+            $upd->bind_param("i", $row['id']);
+            $upd->execute();
+            $upd->close();
+            $enviados++;
+        } else {
+            $upd = $conn->prepare("UPDATE emails_pendentes SET tentativas = tentativas + 1 WHERE id = ?");
+            $upd->bind_param("i", $row['id']);
+            $upd->execute();
+            $upd->close();
+        }
+    }
+
+    logMsg("[Fila de Emails] Processados: " . count($emails) . " | Enviados: $enviados");
+}
+
+// ---------------------------------------------------------------------------
 // Execução
 // ---------------------------------------------------------------------------
 enviarLembreteInscricao();
@@ -706,5 +751,6 @@ notificarAtividades();
 notificarAniversarios();
 lembrarMensagensNaoLidas();
 enviarRelatorioQuinzenal();
+processarEmailsPendentes();
 
 logMsg("--- Script finalizado em " . date('Y-m-d H:i:s') . " ---\n");
