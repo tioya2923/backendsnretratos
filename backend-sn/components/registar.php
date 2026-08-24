@@ -127,6 +127,28 @@ if (!$stmt->execute()) {
 }
 
 $stmt->close();
+$conn->close();
+
+// -------------------- RESPONDER JÁ, EMAILS DEPOIS --------------------
+// A conta já está criada e ativa neste ponto — o utilizador não precisa de
+// esperar pelos emails para poder continuar. Antes, os dois sendEmail()
+// abaixo corriam ANTES desta resposta: com a porta SMTP da PTisp bloqueada
+// (timeout de 10s cada), isso prendia o registo inteiro até ~20s. Devolver
+// a resposta já e só depois enviar os emails corta isso para o tempo real
+// do pedido (bem abaixo de 1s).
+echo json_encode([
+    'status' => 'success',
+    'message' => 'Registo feito com sucesso. Já pode iniciar sessão.'
+]);
+
+// fastcgi_finish_request() entrega a resposta ao browser e fecha a ligação,
+// mas o script continua a correr a seguir — é isto que torna os emails
+// "em segundo plano". Só existe sob PHP-FPM; noutros SAPIs (ex.: mod_php)
+// simplesmente não existe, e os emails voltam a correr antes de terminar
+// (mais lento, mas nunca quebra nada).
+if (function_exists('fastcgi_finish_request')) {
+    fastcgi_finish_request();
+}
 
 // -------------------- EMAILS (admin + utilizador) --------------------
 // Usa o helper partilhado (email_utils.php): mesma configuração SMTP em
@@ -146,10 +168,4 @@ if (!sendEmail($email, 'Registo efetuado com sucesso', 'O seu registo foi efetua
     error_log("Erro ao enviar email de confirmação de registo para $email");
 }
 
-$conn->close();
-
-echo json_encode([
-    'status' => 'success',
-    'message' => 'Registo feito com sucesso. Já pode iniciar sessão.'
-]);
 exit;
