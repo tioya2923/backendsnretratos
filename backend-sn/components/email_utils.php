@@ -16,9 +16,10 @@ use PHPMailer\PHPMailer\Exception;
  * @param bool   $isHtml  true = HTML, false = texto simples
  * @return bool
  */
-function sendEmail(string $to, string $subject, string $body, bool $isHtml = false): bool {
+function sendEmail(string $to, string $subject, string $body, bool $isHtml = false, ?string &$erro = null): bool {
     if (empty(trim($to))) {
-        error_log("sendEmail: endereço de destino vazio.");
+        $erro = 'endereço de destino vazio';
+        error_log("sendEmail: $erro.");
         return false;
     }
 
@@ -26,7 +27,8 @@ function sendEmail(string $to, string $subject, string $body, bool $isHtml = fal
     $mailPass = getenv('MAIL_PASSWORD');
 
     if (!$mailPass) {
-        error_log("sendEmail: MAIL_PASSWORD não configurado.");
+        $erro = 'MAIL_PASSWORD não configurado';
+        error_log("sendEmail: $erro.");
         return false;
     }
 
@@ -59,7 +61,8 @@ function sendEmail(string $to, string $subject, string $body, bool $isHtml = fal
         $mail->send();
         return true;
     } catch (Exception $e) {
-        error_log("sendEmail falhou para $to: " . $e->getMessage());
+        $erro = $e->getMessage();
+        error_log("sendEmail falhou para $to: $erro");
         return false;
     }
 }

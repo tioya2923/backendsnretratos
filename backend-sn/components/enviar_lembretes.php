@@ -780,8 +780,10 @@ function processarEmailsPendentes() {
     if (empty($emails)) return;
 
     $enviados = 0;
+    $falhas   = [];
     foreach ($emails as $row) {
-        $ok = sendEmail($row['destinatario'], $row['assunto'], $row['corpo'], (bool) $row['is_html']);
+        $erro = null;
+        $ok = sendEmail($row['destinatario'], $row['assunto'], $row['corpo'], (bool) $row['is_html'], $erro);
         if ($ok) {
             $upd = $conn->prepare("UPDATE emails_pendentes SET enviado_em = NOW() WHERE id = ?");
             $upd->bind_param("i", $row['id']);
@@ -793,7 +795,14 @@ function processarEmailsPendentes() {
             $upd->bind_param("i", $row['id']);
             $upd->execute();
             $upd->close();
+            // Antes, a razão exata só ia para o error_log do servidor —
+            // invisível no log do cron. Regista aqui também, para dar
+            // visibilidade imediata sem precisar de acesso ao servidor.
+            $falhas[] = "#{$row['id']} {$row['destinatario']}: $erro";
         }
+    }
+    if (!empty($falhas)) {
+        logMsg("[Fila de Emails] Falhas nesta ronda:\n  - " . implode("\n  - ", $falhas));
     }
 
     logMsg("[Fila de Emails] Processados: " . count($emails) . " | Enviados: $enviados");
