@@ -726,16 +726,19 @@ function enviarRelatorioQuinzenal() {
         " . $paraLista($naoInscritos) . "
     ";
 
+    // enfileirarEmail(), não sendEmail() direto — o envio síncrono por SMTP
+    // falha aqui (porta bloqueada na PTisp, mesma causa já corrigida no
+    // registo). Fica em fila e o processarEmailsPendentes() mais abaixo
+    // (já corre a cada ciclo deste script) trata da entrega, com retries.
     $resAdmins = $conn->query("SELECT email_admin FROM admins");
-    $enviados = 0;
+    $enfileirados = 0;
     while ($admin = $resAdmins->fetch_assoc()) {
         if (empty($admin['email_admin'])) continue;
-        $ok = sendEmail($admin['email_admin'], "Relatório quinzenal de inscrições ($periodoFormatado)", $body, true);
-        logMsg("[Relatório Quinzenal] " . ($ok ? "OK" : "FALHA") . ": {$admin['email_admin']}");
-        if ($ok) $enviados++;
+        enfileirarEmail($conn, $admin['email_admin'], "Relatório quinzenal de inscrições ($periodoFormatado)", $body, true);
+        $enfileirados++;
     }
 
-    logMsg("[Relatório Quinzenal] Enviado a $enviados administrador(es). Confirmaram: " . count($confirmaram) . " | Faltaram: " . count($faltaram) . " | Não se inscreveram: " . count($naoInscritos));
+    logMsg("[Relatório Quinzenal] Enfileirado para $enfileirados administrador(es). Confirmaram: " . count($confirmaram) . " | Faltaram: " . count($faltaram) . " | Não se inscreveram: " . count($naoInscritos));
 }
 
 // ---------------------------------------------------------------------------
