@@ -34,7 +34,7 @@ if (!$email || empty($password)) {
 }
 
 // Confirmar a password — sem isto, bastava saber o email de outra
-// pessoa (por exemplo, visto num grupo do WhatsApp) para lhe apagar a
+// pessoa (por exemplo, visto num grupo) para lhe apagar a
 // conta, sem confirmação nenhuma.
 $stmt = $conn->prepare('SELECT id, password FROM usuarios WHERE email = ?');
 $stmt->bind_param('s', $email);

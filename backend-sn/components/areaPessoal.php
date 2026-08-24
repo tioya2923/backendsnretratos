@@ -44,12 +44,6 @@ if ($result->num_rows > 0) {
         $_SESSION['user_id'] = $row['id'];
         $_SESSION['user_name'] = $row['name'];
 
-        // Verificar se o número de WhatsApp está cadastrado
-        if (empty($row['whatsapp'])) {
-            echo json_encode(["status" => "whatsapp_required", "message" => "Por favor, insira seu número de WhatsApp para continuar.", "user_id" => $row['id']]);
-            exit();
-        }
-
         // Em vez de redirecionar, retorne uma resposta de sucesso
         echo json_encode(["status" => "success", "message" => "Login bem-sucedido"]);
     } else {

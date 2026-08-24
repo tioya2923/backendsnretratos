@@ -21,7 +21,6 @@ CREATE TABLE IF NOT EXISTS usuarios (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    whatsapp VARCHAR(20) DEFAULT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pendente',
     approval_code VARCHAR(64) DEFAULT NULL,
     data_aniversario DATE DEFAULT NULL,

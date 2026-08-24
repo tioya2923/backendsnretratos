@@ -36,7 +36,7 @@ echo "Iniciado  : " . date('Y-m-d H:i:s') . "\n";
 echo "---------------------\n\n";
 
 // Buscar todos os utilizadores aprovados
-$sql = "SELECT id, name, email, whatsapp FROM usuarios WHERE status = 'aprovado'";
+$sql = "SELECT id, name, email FROM usuarios WHERE status = 'aprovado'";
 $res = $conn->query($sql);
 
 $totalEmail = ['ok' => 0, 'falha' => 0, 'sem' => 0];

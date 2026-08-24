@@ -12,7 +12,7 @@ require_once __DIR__ . '/email_utils.php';
 require_once __DIR__ . '/push_utils.php';
 
 // Só aceita chamadas do disparador de cron (evita que qualquer pessoa na
-// internet dispare envios em massa de WhatsApp/email a todos os utilizadores).
+// internet dispare envios em massa de email a todos os utilizadores).
 $cronSecret = getenv('CRON_SECRET');
 $recebido   = $_SERVER['HTTP_X_CRON_SECRET'] ?? '';
 if (php_sapi_name() !== 'cli') {
@@ -130,7 +130,7 @@ function enviarLembreteInscricao() {
         logMsg("[Inscrição] Semana $segunda a $domingo — já inscritos: " . count($jaInscritos));
     }
 
-    $sql = "SELECT id, name, whatsapp, email FROM usuarios WHERE status = 'aprovado'";
+    $sql = "SELECT id, name, email FROM usuarios WHERE status = 'aprovado'";
     $res = $conn->query($sql);
 
     $destinatarioIds = [];
@@ -306,7 +306,7 @@ function notificarAtividades() {
     $stmt = $conn->prepare("
         SELECT a.id, a.user_id, a.hora_inicio,
                COALESCE(NULLIF(a.titulo,''), a.tipo) AS nome_atividade,
-               u.name, u.whatsapp, u.email
+               u.name, u.email
         FROM atividades_usuario a
         JOIN usuarios u ON u.id = a.user_id
         WHERE a.ativo = 1
@@ -431,7 +431,7 @@ function notificarAniversarios() {
 
     // Utilizadores aprovados (destinatários do aviso — toda a comunidade)
     $usuarios = [];
-    $res = $conn->query("SELECT name, whatsapp, email FROM usuarios WHERE status = 'aprovado'");
+    $res = $conn->query("SELECT name, email FROM usuarios WHERE status = 'aprovado'");
     if ($res) {
         while ($row = $res->fetch_assoc()) {
             $usuarios[] = $row;
@@ -524,7 +524,7 @@ function lembrarMensagensNaoLidas() {
 
     // Utilizadores aprovados, indexados por id (para resolver mensagens "para todos")
     $todosUsuarios = [];
-    $resU = $conn->query("SELECT id, name, whatsapp, email FROM usuarios WHERE status = 'aprovado'");
+    $resU = $conn->query("SELECT id, name, email FROM usuarios WHERE status = 'aprovado'");
     if ($resU) {
         while ($row = $resU->fetch_assoc()) {
             $todosUsuarios[(int) $row['id']] = $row;

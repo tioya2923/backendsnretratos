@@ -13,7 +13,7 @@ if (!$userId) {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id, name, email, whatsapp, status FROM usuarios WHERE id = ?");
+$stmt = $conn->prepare("SELECT id, name, email, status FROM usuarios WHERE id = ?");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $user = stmt_get_result($stmt)->fetch_assoc();
@@ -26,38 +26,6 @@ if (!$user) {
 // GET — dados do perfil
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     echo json_encode($user);
-    exit;
-}
-
-// PUT — atualizar dados editáveis (whatsapp)
-if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-    $data = json_decode(file_get_contents('php://input'), true);
-
-    $fields = [];
-    $types  = '';
-    $values = [];
-
-    if (isset($data['whatsapp'])) {
-        $whatsapp = preg_replace('/\D/', '', trim($data['whatsapp']));
-        $fields[] = 'whatsapp = ?';
-        $types   .= 's';
-        $values[] = $whatsapp;
-    }
-
-    if (empty($fields)) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Nenhum campo para atualizar']);
-        exit;
-    }
-
-    $types   .= 'i';
-    $values[] = $user['id'];
-    $sql = "UPDATE usuarios SET " . implode(', ', $fields) . " WHERE id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param($types, ...$values);
-    $stmt->execute();
-
-    echo json_encode(['success' => true]);
     exit;
 }
 

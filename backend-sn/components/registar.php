@@ -52,10 +52,6 @@ if (!is_array($data)) {
 $name     = trim($data['name'] ?? '');
 $email    = filter_var($data['email'] ?? '', FILTER_VALIDATE_EMAIL);
 $password = $data['password'] ?? '';
-// WhatsApp deixou de ser recolhido no registo — mantido opcional aqui
-// só para não partir integrações antigas que ainda o enviem.
-$whatsapp = preg_replace('/\D/', '', $data['whatsapp'] ?? '');
-$whatsapp = $whatsapp !== '' ? $whatsapp : null;
 $newRegistration = filter_var($data['newRegistration'] ?? true, FILTER_VALIDATE_BOOLEAN);
 
 /**
@@ -113,15 +109,14 @@ $approvalUrl = "$backendUrl/components/linkAprovacao.php?code=$approvalCode";
 $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
 $stmt = $conn->prepare("
-    INSERT INTO usuarios (name, email, password, whatsapp, status, approval_code, data_aniversario, data_aniversario_sacerdotal)
-    VALUES (?, ?, ?, ?, 'pendente', ?, ?, ?)
+    INSERT INTO usuarios (name, email, password, status, approval_code, data_aniversario, data_aniversario_sacerdotal)
+    VALUES (?, ?, ?, 'pendente', ?, ?, ?)
 ");
 $stmt->bind_param(
-    "sssssss",
+    "ssssss",
     $name,
     $email,
     $passwordHash,
-    $whatsapp,
     $approvalCode,
     $dataAniversario,
     $dataAniversarioSacerdotal

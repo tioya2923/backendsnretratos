@@ -190,7 +190,7 @@ if ($method === 'POST') {
 
     echo json_encode(['success' => true]);
 
-    // Notificar destinatários (push + email + WhatsApp), após responder ao pedido
+    // Notificar destinatários (push + email), após responder ao pedido
     $notifBody = mb_strlen($corpo) > 100 ? mb_substr($corpo, 0, 97) . '…' : $corpo;
 
     // Título/corpo distinguem claramente mensagem para todos de mensagem pessoal
@@ -203,7 +203,7 @@ if ($method === 'POST') {
     $notifUsuarios = [];
     if ($pushToAll) {
         // Todos os utilizadores aprovados exceto o remetente
-        $allUsersStmt = $conn->prepare("SELECT id, name, whatsapp, email FROM usuarios WHERE id != ? AND status = 'aprovado'");
+        $allUsersStmt = $conn->prepare("SELECT id, name, email FROM usuarios WHERE id != ? AND status = 'aprovado'");
         $allUsersStmt->bind_param("i", $userId);
         $allUsersStmt->execute();
         $notifUsuarios = stmt_get_result($allUsersStmt)->fetch_all(MYSQLI_ASSOC);
@@ -211,7 +211,7 @@ if ($method === 'POST') {
     } elseif (!empty($pushUserIds)) {
         $placeholders = implode(',', array_fill(0, count($pushUserIds), '?'));
         $typesStr     = str_repeat('i', count($pushUserIds));
-        $destStmt = $conn->prepare("SELECT id, name, whatsapp, email FROM usuarios WHERE id IN ($placeholders)");
+        $destStmt = $conn->prepare("SELECT id, name, email FROM usuarios WHERE id IN ($placeholders)");
         $destStmt->bind_param($typesStr, ...$pushUserIds);
         $destStmt->execute();
         $notifUsuarios = stmt_get_result($destStmt)->fetch_all(MYSQLI_ASSOC);
