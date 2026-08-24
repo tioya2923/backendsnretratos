@@ -21,7 +21,9 @@ function garantirColunaNumeroPessoas(mysqli $conn): void {
     ");
     $check->bind_param('s', $dbName);
     $check->execute();
-    $existe = (int) $check->get_result()->fetch_row()[0];
+    // stmt_get_result() (polyfill/wrapper de mysqli_stmt::get_result — este
+    // servidor não tem mysqlnd nativo), não $check->get_result() direto.
+    $existe = (int) stmt_get_result($check)->fetch_row()[0];
     $check->close();
 
     if ($existe === 0) {
