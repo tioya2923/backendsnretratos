@@ -1,0 +1,163 @@
+<?php
+/**
+ * Confirmação de presença numa refeição — o próprio utilizador confirma,
+ * dentro da janela de 1h a contar do início da refeição (13h30-14h30 para
+ * o almoço; 20h00-21h00 para o jantar, ou 20h30-21h30 ao domingo/feriados,
+ * tal como o horário mostrado no mapa de refeições).
+ */
+
+require_once __DIR__ . '/../../vendor/autoload.php';
+require_once '../connect/server.php';
+require_once '../connect/cors.php';
+require_once '../connect/auth.php';
+
+header('Content-Type: application/json');
+date_default_timezone_set('Europe/Lisbon');
+
+function criarTabelaConfirmacoes($conn) {
+    $conn->query("CREATE TABLE IF NOT EXISTS confirmacoes_presenca (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        refeicao_id INT NOT NULL,
+        tipo VARCHAR(20) NOT NULL,
+        confirmado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_confirmacao (refeicao_id, tipo),
+        CONSTRAINT fk_confirmacoes_refeicao FOREIGN KEY (refeicao_id) REFERENCES refeicoes(id) ON DELETE CASCADE
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+}
+criarTabelaConfirmacoes($conn);
+
+/**
+ * Domingo de Páscoa — mesma fórmula (aproximada) já usada no frontend
+ * (InscritosRefeicoes.jsx) para decidir o horário do jantar; replicada
+ * aqui só para os dois horários (mostrado e confirmável) baterem certo.
+ */
+function calcularPascoa(int $ano): DateTime {
+    $pascoa = new DateTime("$ano-03-31");
+    $diaSemana = (int) $pascoa->format('w'); // 0 = domingo, igual ao getDay() do JS
+    $pascoa->modify('+' . (7 - $diaSemana) . ' days');
+    return $pascoa;
+}
+
+function ehFeriadoOuDomingo(DateTime $data): bool {
+    if ((int) $data->format('w') === 0) return true;
+
+    $fixos = ['01/01', '25/04', '01/05', '10/06', '13/06', '15/08', '05/10', '01/11', '01/12', '08/12', '25/12'];
+    if (in_array($data->format('d/m'), $fixos, true)) return true;
+
+    $pascoa     = calcularPascoa((int) $data->format('Y'));
+    $carnaval   = (clone $pascoa)->modify('-47 days')->format('Y-m-d');
+    $sextaSanta = (clone $pascoa)->modify('-2 days')->format('Y-m-d');
+    $dataStr    = $data->format('Y-m-d');
+
+    return $dataStr === $carnaval || $dataStr === $sextaSanta;
+}
+
+/** Devolve [horaInicio, horaFim] (formato H:i) da janela de confirmação de 1h. */
+function janelaConfirmacao(string $tipo, DateTime $data): array {
+    if ($tipo === 'almoco') {
+        return ['13:30', '14:30'];
+    }
+    return ehFeriadoOuDomingo($data) ? ['20:30', '21:30'] : ['20:00', '21:00'];
+}
+
+$method = $_SERVER['REQUEST_METHOD'];
+
+if ($method === 'POST') {
+    $userId = getAuthUserId($conn);
+    if (!$userId) {
+        http_response_code(401);
+        echo json_encode(['status' => 'error', 'message' => 'Não autenticado']);
+        exit;
+    }
+
+    $data       = json_decode(file_get_contents('php://input'), true);
+    $refeicaoId = isset($data['refeicao_id']) ? (int) $data['refeicao_id'] : 0;
+    $tipo       = $data['tipo'] ?? '';
+
+    if ($refeicaoId <= 0 || !in_array($tipo, ['almoco', 'jantar'], true)) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Dados inválidos']);
+        exit;
+    }
+
+    $stmt = $conn->prepare("
+        SELECT nome_completo, data, almoco, almoco_mais_cedo, almoco_mais_tarde,
+               jantar, jantar_mais_cedo, jantar_mais_tarde
+        FROM refeicoes WHERE id = ?
+    ");
+    $stmt->bind_param("i", $refeicaoId);
+    $stmt->execute();
+    $refeicao = stmt_get_result($stmt)->fetch_assoc();
+    $stmt->close();
+
+    if (!$refeicao) {
+        http_response_code(404);
+        echo json_encode(['status' => 'error', 'message' => 'Inscrição não encontrada']);
+        exit;
+    }
+
+    $stmtU = $conn->prepare("SELECT name FROM usuarios WHERE id = ?");
+    $stmtU->bind_param("i", $userId);
+    $stmtU->execute();
+    $user = stmt_get_result($stmtU)->fetch_assoc();
+    $stmtU->close();
+
+    // Só o próprio pode confirmar a sua presença — comparação por nome,
+    // porque a tabela refeicoes não guarda o id do utilizador (mesma
+    // convenção já usada no resto da aplicação).
+    if (!$user || mb_strtolower(trim($user['name']), 'UTF-8') !== mb_strtolower(trim($refeicao['nome_completo']), 'UTF-8')) {
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Só podes confirmar a tua própria presença']);
+        exit;
+    }
+
+    $inscritoNesteTipo = $tipo === 'almoco'
+        ? ($refeicao['almoco'] || $refeicao['almoco_mais_cedo'] || $refeicao['almoco_mais_tarde'])
+        : ($refeicao['jantar'] || $refeicao['jantar_mais_cedo'] || $refeicao['jantar_mais_tarde']);
+
+    if (!$inscritoNesteTipo) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Não estás inscrito para esta refeição']);
+        exit;
+    }
+
+    $dataRefeicao = new DateTime($refeicao['data']);
+    [$horaInicio, $horaFim] = janelaConfirmacao($tipo, $dataRefeicao);
+    $inicio = DateTime::createFromFormat('Y-m-d H:i', $refeicao['data'] . ' ' . $horaInicio);
+    $fim    = DateTime::createFromFormat('Y-m-d H:i', $refeicao['data'] . ' ' . $horaFim);
+    $agora  = new DateTime();
+
+    if ($agora < $inicio || $agora > $fim) {
+        http_response_code(403);
+        echo json_encode([
+            'status'  => 'error',
+            'message' => "A confirmação só está disponível entre as $horaInicio e as $horaFim."
+        ]);
+        exit;
+    }
+
+    $stmtC = $conn->prepare("INSERT IGNORE INTO confirmacoes_presenca (refeicao_id, tipo) VALUES (?, ?)");
+    $stmtC->bind_param("is", $refeicaoId, $tipo);
+    $stmtC->execute();
+    $stmtC->close();
+
+    echo json_encode(['status' => 'success', 'message' => 'Presença confirmada!']);
+    exit;
+}
+
+if ($method === 'GET') {
+    // Lista de confirmações já feitas — o frontend usa isto para mostrar o
+    // "visto" junto ao nome de quem já confirmou. Sem dados sensíveis, só
+    // exige sessão válida (utilizador ou admin), como o resto do mapa.
+    requireAnySession($conn);
+    $result = $conn->query("SELECT refeicao_id, tipo FROM confirmacoes_presenca");
+    $confirmacoes = [];
+    while ($row = $result->fetch_assoc()) {
+        $confirmacoes[] = ['refeicao_id' => (int) $row['refeicao_id'], 'tipo' => $row['tipo']];
+    }
+    echo json_encode($confirmacoes);
+    exit;
+}
+
+http_response_code(405);
+echo json_encode(['status' => 'error', 'message' => 'Método não suportado']);

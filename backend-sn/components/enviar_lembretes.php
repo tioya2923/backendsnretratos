@@ -648,10 +648,30 @@ function enviarRelatorioQuinzenal() {
         }
     }
 
-    $paraLista = function (array $nomes) {
-        if (empty($nomes)) return '<p><em>Ninguém.</em></p>';
-        $itens = array_map(fn($n) => '<li>' . htmlspecialchars($n) . '</li>', $nomes);
-        return '<ul>' . implode('', $itens) . '</ul>';
+    // Confirmações de presença (tabela confirmacoes_presenca, ver
+    // confirmar_presenca.php) feitas dentro do mesmo período de 15 dias.
+    $confirmacoes = [];
+    $stmtC = $conn->prepare("
+        SELECT r.nome_completo, r.data, c.tipo
+        FROM confirmacoes_presenca c
+        JOIN refeicoes r ON r.id = c.refeicao_id
+        WHERE r.data BETWEEN ? AND ?
+        ORDER BY r.data, r.nome_completo
+    ");
+    $stmtC->bind_param("ss", $inicio, $fim);
+    $stmtC->execute();
+    $resC = stmt_get_result($stmtC);
+    while ($row = $resC->fetch_assoc()) {
+        $tipoLabel = $row['tipo'] === 'almoco' ? 'Almoço' : 'Jantar';
+        $dataFormatada = date('d/m/Y', strtotime($row['data']));
+        $confirmacoes[] = trim($row['nome_completo']) . " — $dataFormatada — $tipoLabel";
+    }
+    $stmtC->close();
+
+    $paraLista = function (array $itens) {
+        if (empty($itens)) return '<p><em>Ninguém.</em></p>';
+        $li = array_map(fn($n) => '<li>' . htmlspecialchars($n) . '</li>', $itens);
+        return '<ul>' . implode('', $li) . '</ul>';
     };
 
     $body = "
@@ -661,6 +681,8 @@ function enviarRelatorioQuinzenal() {
         " . $paraLista($inscritos) . "
         <h3>Não se inscreveram nenhuma vez (" . count($naoInscritos) . ")</h3>
         " . $paraLista($naoInscritos) . "
+        <h3>Confirmações de presença (" . count($confirmacoes) . ")</h3>
+        " . $paraLista($confirmacoes) . "
     ";
 
     $resAdmins = $conn->query("SELECT email_admin FROM admins");
@@ -672,7 +694,7 @@ function enviarRelatorioQuinzenal() {
         if ($ok) $enviados++;
     }
 
-    logMsg("[Relatório Quinzenal] Enviado a $enviados administrador(es). Inscritos: " . count($inscritos) . " | Não inscritos: " . count($naoInscritos));
+    logMsg("[Relatório Quinzenal] Enviado a $enviados administrador(es). Inscritos: " . count($inscritos) . " | Não inscritos: " . count($naoInscritos) . " | Confirmações: " . count($confirmacoes));
 }
 
 // ---------------------------------------------------------------------------

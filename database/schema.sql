@@ -127,6 +127,18 @@ CREATE TABLE IF NOT EXISTS refeicoes (
     INDEX idx_nome_data (nome_completo, data)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Confirmação de presença (confirmar_presenca.php) — o próprio utilizador
+-- confirma que está mesmo presente, dentro de 1h a contar do início da
+-- refeição. Uma linha por (inscrição, tipo de refeição).
+CREATE TABLE IF NOT EXISTS confirmacoes_presenca (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    refeicao_id INT NOT NULL,
+    tipo VARCHAR(20) NOT NULL,
+    confirmado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_confirmacao (refeicao_id, tipo),
+    CONSTRAINT fk_confirmacoes_refeicao FOREIGN KEY (refeicao_id) REFERENCES refeicoes(id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- ── Código secreto de acesso (verifyCode.php) ────────────────────────────
 
 CREATE TABLE IF NOT EXISTS codigosecreto (
