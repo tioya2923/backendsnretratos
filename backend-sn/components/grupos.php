@@ -66,6 +66,9 @@ $data = json_decode(file_get_contents("php://input"), true);
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($data['nome_grupo'])) {
         $nome_grupo = $data['nome_grupo'];
+        // Número de pessoas do grupo — o que soma ao total geral de
+        // pessoas à mesa no dia em que o grupo tiver uma refeição marcada.
+        $numero_pessoas = isset($data['numero_pessoas']) ? max(0, (int) $data['numero_pessoas']) : 0;
 
         // Verificar se o grupo já existe
         $check_sql = "SELECT COUNT(*) FROM Grupos WHERE nome_grupo = ?";
@@ -80,9 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             http_response_code(409);
             echo json_encode(["status" => "error", "message" => "Grupo já existe"]);
         } else {
-            $sql = "INSERT INTO Grupos (nome_grupo) VALUES (?)";
+            $sql = "INSERT INTO Grupos (nome_grupo, numero_pessoas) VALUES (?, ?)";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("s", $nome_grupo);
+            $stmt->bind_param("si", $nome_grupo, $numero_pessoas);
 
             if ($stmt->execute()) {
                 echo json_encode(["status" => "success", "message" => "Grupo adicionado com sucesso"]);
@@ -115,10 +118,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($data['id']) && isset($data['nome_grupo'])) {
         $id = $data['id'];
         $nome_grupo = $data['nome_grupo'];
+        $numero_pessoas = isset($data['numero_pessoas']) ? max(0, (int) $data['numero_pessoas']) : 0;
 
-        $sql = "UPDATE Grupos SET nome_grupo = ? WHERE id = ?";
+        $sql = "UPDATE Grupos SET nome_grupo = ?, numero_pessoas = ? WHERE id = ?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("si", $nome_grupo, $id);
+        $stmt->bind_param("sii", $nome_grupo, $numero_pessoas, $id);
 
         if ($stmt->execute()) {
             echo json_encode(["status" => "success", "message" => "Grupo atualizado com sucesso"]);

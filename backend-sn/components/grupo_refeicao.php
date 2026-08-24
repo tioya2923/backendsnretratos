@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['grupo_id'])) {
 
 // Buscar todos os grupos com suas refeições e total de membros
 if ($_SERVER['REQUEST_METHOD'] == 'GET' && !isset($_GET['grupo_id'])) {
-    $sql = "SELECT g.id as grupo_id, g.nome_grupo, COUNT(m.id) as total_membros, r.id as refeicao_id, r.tipo_refeicao, r.data_refeicao, r.hora_refeicao, r.local_refeicao
+    $sql = "SELECT g.id as grupo_id, g.nome_grupo, g.numero_pessoas, COUNT(m.id) as total_membros, r.id as refeicao_id, r.tipo_refeicao, r.data_refeicao, r.hora_refeicao, r.local_refeicao
             FROM Grupos g
             LEFT JOIN Membros m ON g.id = m.grupo_id
             LEFT JOIN refeicoes_grupos r ON g.id = r.grupo_id
@@ -84,6 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && !isset($_GET['grupo_id'])) {
             $grupos[$grupo_id] = [
                 'id' => $grupo_id,
                 'nome_grupo' => $row['nome_grupo'],
+                'numero_pessoas' => (int) $row['numero_pessoas'],
                 'total_membros' => $row['total_membros'],
                 'refeicoes' => []
             ];

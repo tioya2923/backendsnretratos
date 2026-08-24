@@ -87,6 +87,11 @@ CREATE TABLE IF NOT EXISTS admin_sessoes (
 CREATE TABLE IF NOT EXISTS Grupos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome_grupo VARCHAR(255) NOT NULL,
+    -- Contagem de pessoas do grupo, definida diretamente pelo admin (em
+    -- vez de/além de nomear membros um a um) — é este número que soma ao
+    -- total geral de pessoas à mesa no dia em que o grupo tiver uma
+    -- refeição marcada (ver refeicoes_grupos e grupo_refeicao.php).
+    numero_pessoas INT NOT NULL DEFAULT 0,
     UNIQUE KEY unique_nome_grupo (nome_grupo)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
