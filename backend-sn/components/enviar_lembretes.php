@@ -81,7 +81,12 @@ function enviarLembreteInscricao() {
     $diaSemana = (int) date('N');
     $agora     = time();
 
-    // Verifica se estamos dentro de ±10 min do horário configurado
+    // Verifica se estamos dentro da janela do horário configurado. ±35 min
+    // (não só ±10) porque o GitHub Actions não garante a cadência de 5 em 5
+    // minutos do cron.yml — na prática já se viram falhas de 20 a 45 min
+    // entre disparos, o que "saltava por cima" de uma janela mais estreita
+    // e o lembrete acabava por nunca sair nesse dia. Seguro alargar: o
+    // marcarComoEnviado() abaixo garante um único envio por dia de qualquer forma.
     $janelas = [
         ['dia' => 1, 'hora' => '13:10', 'tipo' => 'inscricao_segunda'],
         ['dia' => 4, 'hora' => '21:30', 'tipo' => 'inscricao_quinta'],
@@ -91,7 +96,7 @@ function enviarLembreteInscricao() {
     foreach ($janelas as $j) {
         if ($diaSemana !== $j['dia']) continue;
         $alvo = strtotime('today ' . $j['hora']);
-        if (abs($agora - $alvo) <= 600) {
+        if (abs($agora - $alvo) <= 2100) {
             $tipoAtivo = $j['tipo'];
             break;
         }
@@ -206,9 +211,13 @@ function enviarLembretes() {
         $horaEnvio   = date('H:i', strtotime($horaRefeicao) - 10 * 60);
         $horaEnvioTs = strtotime("today $horaEnvio");
 
-        // Janela de ±10 minutos: cobre jitter do Heroku Scheduler
-        if (abs($agora - $horaEnvioTs) > 600) {
-            logMsg("[DEBUG] Hora actual ($horaAgora) fora da janela de envio ($horaEnvio ±10 min) para $tipo. A saltar.");
+        // Janela de ±35 minutos — o cron.yml corre a cada 5 min "no papel",
+        // mas o agendador do GitHub Actions não garante essa cadência (já
+        // se viram falhas de 20 a 45 min entre disparos); uma janela mais
+        // estreita deixava o lembrete sem sair nesse dia. Seguro alargar:
+        // marcarComoEnviado() abaixo continua a garantir um único envio.
+        if (abs($agora - $horaEnvioTs) > 2100) {
+            logMsg("[DEBUG] Hora actual ($horaAgora) fora da janela de envio ($horaEnvio ±35 min) para $tipo. A saltar.");
             continue;
         }
 
@@ -300,9 +309,13 @@ function enviarLembretes() {
 function notificarAtividades() {
     global $conn;
 
+    // Janela alargada (-15/+40 min, era -10/+30): o cron do GitHub Actions
+    // não garante os 5 em 5 min configurados (ver enviarLembretes()) — a
+    // coluna ultima_notificacao continua a garantir um único aviso por
+    // atividade, mesmo com a janela maior.
     $hoje    = date('Y-m-d');
-    $horaMin = date('H:i:s', strtotime('-10 minutes'));
-    $horaMax = date('H:i:s', strtotime('+30 minutes'));
+    $horaMin = date('H:i:s', strtotime('-15 minutes'));
+    $horaMax = date('H:i:s', strtotime('+40 minutes'));
 
     $stmt = $conn->prepare("
         SELECT a.id, a.user_id, a.hora_inicio,

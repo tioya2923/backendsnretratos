@@ -41,7 +41,8 @@ function sendPushNotification(
     $vapidSubject = getenv('VAPID_SUBJECT') ?: 'mailto:retratospsn@gmail.com';
 
     if (!$vapidPublic || !$vapidPrivate) {
-        error_log('Push: Chaves VAPID não configuradas.');
+        $msg = 'Push: Chaves VAPID não configuradas.';
+        function_exists('logMsg') ? logMsg($msg) : error_log($msg);
         return;
     }
 
@@ -73,6 +74,7 @@ function sendPushNotification(
     }
 
     $endpointsToDelete = [];
+    $totalQueued = 0;
 
     while ($row = $result->fetch_assoc()) {
         $subscription = Subscription::create([
@@ -81,11 +83,39 @@ function sendPushNotification(
         ]);
         // Passa TTL, urgência e topic explicitamente em cada notificação
         $webPush->queueNotification($subscription, $payload, $notifOptions);
+        $totalQueued++;
     }
 
+    // Antes, só as subscrições expiradas eram tratadas — qualquer outra
+    // falha (chaves VAPID erradas, rede, payload inválido) ficava
+    // completamente silenciosa, sem nenhum registo. Regista sempre um
+    // resumo, e o detalhe de cada falha não-esperada, para dar visibilidade
+    // caso os pushes parem de chegar por outro motivo qualquer.
+    $sucesso = 0;
+    $falhas  = [];
     foreach ($webPush->flush() as $report) {
-        if ($report->isSubscriptionExpired()) {
+        if ($report->isSuccess()) {
+            $sucesso++;
+        } elseif ($report->isSubscriptionExpired()) {
             $endpointsToDelete[] = $report->getEndpoint();
+        } else {
+            $falhas[] = $report->getReason();
+        }
+    }
+
+    if ($totalQueued > 0) {
+        $msg = "Push [$tag]: $sucesso/$totalQueued entregues, " . count($endpointsToDelete) . " expiradas";
+        if (!empty($falhas)) {
+            $msg .= ", " . count($falhas) . " falhas: " . implode(' | ', array_unique($falhas));
+        }
+        // logMsg() (definida em enviar_lembretes.php) fica visível no log do
+        // cron no GitHub Actions — muito mais fácil de consultar do que o
+        // error_log do servidor. Mas esta função é partilhada por outros
+        // pontos de entrada (ex.: send_push.php) que não a definem.
+        if (function_exists('logMsg')) {
+            logMsg($msg);
+        } else {
+            error_log($msg);
         }
     }
 
