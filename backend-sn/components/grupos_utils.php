@@ -11,20 +11,16 @@
  * qualquer uma.
  */
 function garantirColunaNumeroPessoas(mysqli $conn): void {
-    $resDb = $conn->query("SELECT DATABASE()");
-    $dbName = $resDb ? $resDb->fetch_row()[0] : null;
-    if (!$dbName) return;
-
-    $check = $conn->prepare("
-        SELECT COUNT(*) FROM information_schema.COLUMNS
-        WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'Grupos' AND COLUMN_NAME = 'numero_pessoas'
+    // DATABASE() dentro da própria query evita um pedido extra para
+    // descobrir o nome da base de dados atual.
+    $result = $conn->query("
+        SELECT COUNT(*) AS total FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'Grupos' AND COLUMN_NAME = 'numero_pessoas'
     ");
-    $check->bind_param('s', $dbName);
-    $check->execute();
-    // stmt_get_result() (polyfill/wrapper de mysqli_stmt::get_result — este
-    // servidor não tem mysqlnd nativo), não $check->get_result() direto.
-    $existe = (int) stmt_get_result($check)->fetch_row()[0];
-    $check->close();
+    if (!$result) return; // information_schema inacessível — não bloquear o pedido por causa disto.
+
+    $linha  = $result->fetch_assoc();
+    $existe = (int) ($linha['total'] ?? 0);
 
     if ($existe === 0) {
         $conn->query("ALTER TABLE Grupos ADD COLUMN numero_pessoas INT NOT NULL DEFAULT 0");
