@@ -586,6 +586,96 @@ function lembrarMensagensNaoLidas() {
 }
 
 // ---------------------------------------------------------------------------
+// Relatório quinzenal de inscrições, para os administradores (a cada 15 dias)
+// ---------------------------------------------------------------------------
+function criarTabelaRelatorioQuinzenal($conn) {
+    $conn->query("CREATE TABLE IF NOT EXISTS relatorio_quinzenal_log (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        enviado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+}
+
+function enviarRelatorioQuinzenal() {
+    global $conn;
+
+    criarTabelaRelatorioQuinzenal($conn);
+
+    // Só corre se já passaram 15 dias desde o último envio (ou nunca foi
+    // enviado). Ao contrário dos outros lembretes (que verificam "hoje é o
+    // dia certo?"), este não depende de um dia fixo do calendário — fica
+    // resiliente a falhas/pausas do cron: mesmo que um disparo falhe, o
+    // próximo simplesmente vê que já passaram 15+ dias e envia na mesma.
+    $res = $conn->query("SELECT MAX(enviado_em) AS ultimo FROM relatorio_quinzenal_log");
+    $ultimoEnvio = $res ? ($res->fetch_assoc()['ultimo'] ?? null) : null;
+
+    if ($ultimoEnvio !== null) {
+        $dias = (strtotime(date('Y-m-d')) - strtotime(date('Y-m-d', strtotime($ultimoEnvio)))) / 86400;
+        if ($dias < 15) return;
+    }
+
+    // Regista já o envio (antes de construir/mandar o email) para que, se
+    // o cron disparar de novo dentro dos próximos 5 minutos, não duplique.
+    $conn->query("INSERT INTO relatorio_quinzenal_log (enviado_em) VALUES (NOW())");
+
+    $fim    = date('Y-m-d');
+    $inicio = date('Y-m-d', strtotime('-14 days'));
+    $periodoFormatado = date('d/m/Y', strtotime($inicio)) . ' a ' . date('d/m/Y', strtotime($fim));
+
+    logMsg("[LOG] Iniciando relatório quinzenal de inscrições ($periodoFormatado)...");
+
+    // Nomes com pelo menos uma inscrição de refeição no período (qualquer
+    // tipo — almoço, jantar, takeaway, etc.)
+    $inscritosSet = [];
+    $stmtR = $conn->prepare("SELECT DISTINCT nome_completo FROM refeicoes WHERE data BETWEEN ? AND ?");
+    $stmtR->bind_param("ss", $inicio, $fim);
+    $stmtR->execute();
+    $resR = stmt_get_result($stmtR);
+    while ($row = $resR->fetch_assoc()) {
+        $inscritosSet[] = mb_strtolower(trim($row['nome_completo']), 'UTF-8');
+    }
+    $stmtR->close();
+
+    // Separa todos os utilizadores aprovados em inscritos/não inscritos
+    $inscritos    = [];
+    $naoInscritos = [];
+    $resU = $conn->query("SELECT name FROM usuarios WHERE status = 'aprovado' ORDER BY name");
+    while ($row = $resU->fetch_assoc()) {
+        $nome = trim($row['name']);
+        if (in_array(mb_strtolower($nome, 'UTF-8'), $inscritosSet, true)) {
+            $inscritos[] = $nome;
+        } else {
+            $naoInscritos[] = $nome;
+        }
+    }
+
+    $paraLista = function (array $nomes) {
+        if (empty($nomes)) return '<p><em>Ninguém.</em></p>';
+        $itens = array_map(fn($n) => '<li>' . htmlspecialchars($n) . '</li>', $nomes);
+        return '<ul>' . implode('', $itens) . '</ul>';
+    };
+
+    $body = "
+        <h2>Relatório quinzenal de inscrições</h2>
+        <p>Período: <strong>$periodoFormatado</strong></p>
+        <h3>Inscreveram-se pelo menos uma vez (" . count($inscritos) . ")</h3>
+        " . $paraLista($inscritos) . "
+        <h3>Não se inscreveram nenhuma vez (" . count($naoInscritos) . ")</h3>
+        " . $paraLista($naoInscritos) . "
+    ";
+
+    $resAdmins = $conn->query("SELECT email_admin FROM admins");
+    $enviados = 0;
+    while ($admin = $resAdmins->fetch_assoc()) {
+        if (empty($admin['email_admin'])) continue;
+        $ok = sendEmail($admin['email_admin'], "Relatório quinzenal de inscrições ($periodoFormatado)", $body, true);
+        logMsg("[Relatório Quinzenal] " . ($ok ? "OK" : "FALHA") . ": {$admin['email_admin']}");
+        if ($ok) $enviados++;
+    }
+
+    logMsg("[Relatório Quinzenal] Enviado a $enviados administrador(es). Inscritos: " . count($inscritos) . " | Não inscritos: " . count($naoInscritos));
+}
+
+// ---------------------------------------------------------------------------
 // Execução
 // ---------------------------------------------------------------------------
 enviarLembreteInscricao();
@@ -593,5 +683,6 @@ enviarLembretes();
 notificarAtividades();
 notificarAniversarios();
 lembrarMensagensNaoLidas();
+enviarRelatorioQuinzenal();
 
 logMsg("--- Script finalizado em " . date('Y-m-d H:i:s') . " ---\n");

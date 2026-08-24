@@ -188,6 +188,14 @@ CREATE TABLE IF NOT EXISTS lembretes_enviados (
     UNIQUE KEY unique_data_tipo (data, tipo)
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Cada linha marca um envio do relatório quinzenal de inscrições aos
+-- administradores; enviarRelatorioQuinzenal() só envia de novo quando já
+-- passaram 15+ dias desde o MAX(enviado_em).
+CREATE TABLE IF NOT EXISTS relatorio_quinzenal_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    enviado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS push_subscriptions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
