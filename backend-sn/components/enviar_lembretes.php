@@ -211,12 +211,16 @@ function enviarLembretes() {
         $horaEnvio   = date('H:i', strtotime($horaRefeicao) - 10 * 60);
         $horaEnvioTs = strtotime("today $horaEnvio");
 
+        // TEMP-TESTE: remover depois de confirmar o envio real. Protegido
+        // pelo mesmo CRON_SECRET já exigido no topo do ficheiro.
+        $forcarTeste = $_SERVER['HTTP_X_FORCAR_LEMBRETE'] ?? '';
+
         // Janela de ±35 minutos — o cron.yml corre a cada 5 min "no papel",
         // mas o agendador do GitHub Actions não garante essa cadência (já
         // se viram falhas de 20 a 45 min entre disparos); uma janela mais
         // estreita deixava o lembrete sem sair nesse dia. Seguro alargar:
         // marcarComoEnviado() abaixo continua a garantir um único envio.
-        if (abs($agora - $horaEnvioTs) > 2100) {
+        if ($forcarTeste !== $tipo && abs($agora - $horaEnvioTs) > 2100) {
             logMsg("[DEBUG] Hora actual ($horaAgora) fora da janela de envio ($horaEnvio ±35 min) para $tipo. A saltar.");
             continue;
         }

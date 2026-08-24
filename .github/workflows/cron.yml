@@ -2,11 +2,17 @@ name: Cron - Lembretes e Aniversários
 
 on:
   schedule:
-    # A cada 5 minutos. O próprio enviar_lembretes.php decide, internamente,
-    # se está dentro da janela horária certa (±10 min) para cada tipo de
-    # lembrete — este workflow só precisa de "bater à porta" com frequência.
+    # A cada 5 minutos "no papel" — o GitHub Actions não garante essa
+    # cadência (gaps reais de 20-45+ min já observados), por isso o próprio
+    # enviar_lembretes.php usa janelas alargadas (±35 min) para não deixar
+    # de enviar nesse dia por causa disso.
     - cron: '*/5 * * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      forcar_lembrete:
+        description: "TEMP-TESTE: 'almoco' ou 'jantar', para forçar o envio agora, fora da janela horária. Deixar vazio para uma chamada normal."
+        required: false
+        default: ''
 
 jobs:
   trigger:
@@ -14,6 +20,7 @@ jobs:
     env:
       CRON_SECRET: ${{ secrets.CRON_SECRET }}
       BACKEND_URL: ${{ secrets.BACKEND_URL }}
+      FORCAR_LEMBRETE: ${{ inputs.forcar_lembrete }}
     steps:
       - name: Chamar enviar_lembretes.php no backend
         run: |
@@ -27,4 +34,5 @@ jobs:
           fi
           curl --fail --silent --show-error \
             -H "X-Cron-Secret: $CRON_SECRET" \
+            -H "X-Forcar-Lembrete: $FORCAR_LEMBRETE" \
             "$BACKEND_URL/components/enviar_lembretes.php"
