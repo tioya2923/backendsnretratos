@@ -52,7 +52,10 @@ if (!is_array($data)) {
 $name     = trim($data['name'] ?? '');
 $email    = filter_var($data['email'] ?? '', FILTER_VALIDATE_EMAIL);
 $password = $data['password'] ?? '';
+// WhatsApp deixou de ser recolhido no registo — mantido opcional aqui
+// só para não partir integrações antigas que ainda o enviem.
 $whatsapp = preg_replace('/\D/', '', $data['whatsapp'] ?? '');
+$whatsapp = $whatsapp !== '' ? $whatsapp : null;
 $newRegistration = filter_var($data['newRegistration'] ?? true, FILTER_VALIDATE_BOOLEAN);
 
 /**
@@ -70,7 +73,7 @@ $dataAniversario           = validarDataAniversario($data['dataAniversario'] ?? 
 $dataAniversarioSacerdotal = validarDataAniversario($data['dataAniversarioSacerdotal'] ?? null);
 
 // -------------------- VALIDAÇÃO --------------------
-if (!$name || !$email || !$password || !$whatsapp) {
+if (!$name || !$email || !$password) {
     echo json_encode(['status' => 'error', 'message' => 'Dados incompletos']);
     exit;
 }

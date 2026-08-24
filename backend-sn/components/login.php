@@ -39,11 +39,6 @@ if ($result->num_rows > 0) {
             session_start();
             $_SESSION['user_id'] = $row['id'];
             $_SESSION['user_name'] = $row['name'];
-            // Verificar se o número de WhatsApp está cadastrado
-            if (empty($row['whatsapp'])) {
-                echo json_encode(["status" => "whatsapp_required", "message" => "Por favor, insira seu número de WhatsApp para continuar.", "user_id" => $row['id']]);
-                exit();
-            }
             // Gerar um token de autenticação (uma nova sessão; não invalida outras)
             $token = bin2hex(random_bytes(16));
             $insert_stmt = $conn->prepare("INSERT INTO sessoes (user_id, token) VALUES (?, ?)");
