@@ -144,6 +144,20 @@ CREATE TABLE IF NOT EXISTS confirmacoes_presenca (
     CONSTRAINT fk_confirmacoes_refeicao FOREIGN KEY (refeicao_id) REFERENCES refeicoes(id) ON DELETE CASCADE
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Recuperação de palavra-passe (esqueci_password.php / redefinir_password.php)
+-- — um código por pedido, válido 1h, de uso único.
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token VARCHAR(64) NOT NULL,
+    expira_em DATETIME NOT NULL,
+    usado TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_token (token),
+    INDEX idx_user (user_id),
+    CONSTRAINT fk_password_resets_user FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- ── Código secreto de acesso (verifyCode.php) ────────────────────────────
 
 CREATE TABLE IF NOT EXISTS codigosecreto (
