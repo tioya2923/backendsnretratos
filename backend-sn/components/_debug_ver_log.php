@@ -16,5 +16,5 @@ if (!file_exists($logfile)) {
     exit;
 }
 $linhas = file($logfile);
-$tail = array_slice($linhas, -150);
+$tail = array_slice($linhas, -450);
 echo implode('', $tail);
