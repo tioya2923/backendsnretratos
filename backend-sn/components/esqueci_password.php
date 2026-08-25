@@ -79,12 +79,6 @@ if ($user) {
         <p>Este link é válido durante 1 hora. Se não foi você a pedir, pode ignorar este email — a sua palavra-passe atual continua a funcionar.</p>
     ";
     enfileirarEmail($conn, $email, 'Redefinir a sua palavra-passe', $corpo, true);
-
-    // TEMP-TESTE: remover a seguir. Só para testar o fluxo completo sem
-    // depender do envio real de email (BREVO_API_KEY ainda pendente).
-    if (($_SERVER['HTTP_X_DEBUG_TOKEN'] ?? '') === 'teste-recuperacao-2026') {
-        $respostaGenerica['debug_token'] = $token;
-    }
 }
 
 $conn->close();
