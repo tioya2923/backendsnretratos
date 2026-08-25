@@ -147,6 +147,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
     $data = json_decode(file_get_contents("php://input"), true);
     if (isset($data['id'])) {
         $id = $data['id'];
+
+        $stmtCheck = $conn->prepare("SELECT nome_completo FROM refeicoes WHERE id = ?");
+        $stmtCheck->bind_param("i", $id);
+        $stmtCheck->execute();
+        $refeicaoExistente = stmt_get_result($stmtCheck)->fetch_assoc();
+        $stmtCheck->close();
+
+        if (!$refeicaoExistente) {
+            http_response_code(404);
+            echo json_encode(["status" => "error", "message" => "Inscrição não encontrada"]);
+            exit();
+        }
+
+        // Um admin pode sempre remover; um utilizador normal só pode
+        // remover a SUA PRÓPRIA inscrição — antes disto, qualquer
+        // utilizador conseguia apagar a presença de outro só por saber o
+        // id (visível na própria listagem). `refeicoes` não tem user_id,
+        // por isso a comparação é pelo nome, mesmo critério
+        // case/espaço-insensível já usado no resto da app.
+        $souAdmin = getAuthAdminId($conn) !== null;
+        if (!$souAdmin) {
+            $userId = getAuthUserId($conn);
+            $stmtUser = $conn->prepare("SELECT name FROM usuarios WHERE id = ?");
+            $stmtUser->bind_param("i", $userId);
+            $stmtUser->execute();
+            $meuUsuario = stmt_get_result($stmtUser)->fetch_assoc();
+            $stmtUser->close();
+
+            $meuNome = trim(mb_strtolower($meuUsuario['name'] ?? ''));
+            $nomeInscricao = trim(mb_strtolower($refeicaoExistente['nome_completo'] ?? ''));
+
+            if ($meuNome === '' || $meuNome !== $nomeInscricao) {
+                http_response_code(403);
+                echo json_encode(["status" => "error", "message" => "Só pode remover a sua própria inscrição"]);
+                exit();
+            }
+        }
+
         $sql = "DELETE FROM refeicoes WHERE id = ?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("i", $id);
