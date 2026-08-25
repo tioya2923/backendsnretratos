@@ -19,7 +19,11 @@ function sanitize_input($data) {
 // Obter os dados do formulário e sanitizá-los
 
 $email = isset($_POST['email']) ? filter_var(trim($_POST['email']), FILTER_VALIDATE_EMAIL) : '';
-$password = isset($_POST['password']) ? htmlspecialchars(trim($_POST['password'])) : '';
+// Sem htmlspecialchars aqui — a palavra-passe vai para password_verify(),
+// não para HTML; reescrever caracteres como & < > " ' antes de comparar
+// fazia falhar o login de qualquer conta cuja password os contivesse
+// (login.php, o login real, nunca fez essa transformação).
+$password = isset($_POST['password']) ? trim($_POST['password']) : '';
 
 // Validar os dados
 

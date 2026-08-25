@@ -15,7 +15,10 @@ if ($conn->connect_error) {
 garantirColunaNumeroPessoas($conn);
 
 // Criar uma refeição de grupo é gestão de administração — GET
-// (consultar) continua aberto a qualquer sessão.
+// (consultar) continua aberto a qualquer sessão, mas exige pelo menos
+// uma (antes não exigia nenhuma — a agenda de refeições de grupo ficava
+// visível a qualquer pessoa na internet, sem login nenhum).
+requireAnySession($conn);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireAdmin($conn);
 }

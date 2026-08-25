@@ -10,7 +10,10 @@ header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
 
 // Criar, atualizar ou eliminar grupos/membros é gestão de administração
-// — GET (consultar) continua aberto a qualquer sessão.
+// — GET (consultar) continua aberto a qualquer sessão, mas exige pelo
+// menos uma (antes não exigia nenhuma — nomes de membros e grupos
+// ficavam visíveis a qualquer pessoa na internet, sem login nenhum).
+requireAnySession($conn);
 if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'], true)) {
     requireAdmin($conn);
 }

@@ -112,6 +112,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['totais'])) {
 
 // Excluir Refeição
 if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+    // Um visitante (registado aqui com um nome livre, não o do próprio
+    // utilizador) não tem dono entre os utilizadores normais — ao
+    // contrário de refeicoes.php, aqui não há um "nome da sessão" para
+    // comparar. Antes, esta rota não verificava dono nenhum (mesma falha
+    // já corrigida em refeicoes.php, mas esquecida aqui — escreve na
+    // mesma tabela `refeicoes`); só um admin pode remover.
+    requireAdmin($conn);
+
     $data = json_decode(file_get_contents("php://input"), true);
     if (isset($data['id'])) {
         $id = $data['id'];

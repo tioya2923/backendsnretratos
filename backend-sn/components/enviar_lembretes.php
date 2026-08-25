@@ -470,10 +470,14 @@ function notificarAniversarios() {
         }
 
         // Mensagem dentro da app (visível para todos, sem remetente humano)
+        // — corpo é texto simples (MensagensPage.jsx mostra-o direto, sem
+        // HTML). Antes usava uma variável $msg nunca definida (bind a NULL
+        // — `corpo` é NOT NULL, o INSERT falhava sempre, em silêncio).
+        $corpoMsg = "Hoje é aniversário $tipoLabel de {$av['nome']}. Vamos todos parabenizá-lo!";
         $insertMsg = $conn->prepare(
             "INSERT INTO mensagens (remetente_id, destinatario_id, corpo) VALUES (NULL, NULL, ?)"
         );
-        $insertMsg->bind_param("s", $msg);
+        $insertMsg->bind_param("s", $corpoMsg);
         $insertMsg->execute();
         logMsg("[Aniversário App] Mensagem criada: $tipoLabel {$av['nome']}");
 

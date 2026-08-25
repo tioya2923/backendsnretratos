@@ -17,11 +17,15 @@ if ($conn->connect_error) {
 }
 
 // Buscar refeições que precisam de notificação e ordenar por data e hora
-$sql = "SELECT r.*, g.nome_grupo, COUNT(m.id) as total_membros 
+// `notificado` marcava-se sempre no fim deste script, mas nunca entrava
+// no WHERE — cada pedido devolvia (e voltava a "marcar") as mesmas
+// refeições de grupo repetidamente durante toda a janela de 24h.
+$sql = "SELECT r.*, g.nome_grupo, COUNT(m.id) as total_membros
         FROM refeicoes_grupos r
         JOIN Grupos g ON r.grupo_id = g.id
         JOIN Membros m ON g.id = m.grupo_id
-        WHERE TIMESTAMPDIFF(HOUR, NOW(), CONCAT(r.data_refeicao, ' ', r.hora_refeicao)) BETWEEN 0 AND 24
+        WHERE r.notificado = 0
+          AND TIMESTAMPDIFF(HOUR, NOW(), CONCAT(r.data_refeicao, ' ', r.hora_refeicao)) BETWEEN 0 AND 24
         GROUP BY r.id
         ORDER BY r.data_refeicao ASC, r.hora_refeicao ASC";
 $result = $conn->query($sql);
