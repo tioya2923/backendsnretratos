@@ -38,6 +38,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $jantar_mais_cedo = filter_var($data['jantar_mais_cedo'], FILTER_VALIDATE_BOOLEAN);
         $jantar_mais_tarde = filter_var($data['jantar_mais_tarde'], FILTER_VALIDATE_BOOLEAN);
 
+        // Só pode escolher UMA opção de horário para o almoço (Almoço /
+        // Almoço mais cedo / Almoço mais tarde), e UMA para o jantar — o
+        // Takeaway não entra nesta contagem, pode sempre coexistir com
+        // qualquer uma das outras. Mesma regra aplicada em refeicoes.php,
+        // aqui repetida porque escreve na mesma tabela `refeicoes`.
+        $almocoPedido = ($almoco ? 1 : 0) + ($almoco_mais_cedo ? 1 : 0) + ($almoco_mais_tarde ? 1 : 0);
+        $jantarPedido = ($jantar ? 1 : 0) + ($jantar_mais_cedo ? 1 : 0) + ($jantar_mais_tarde ? 1 : 0);
+
+        if ($almocoPedido > 1 || $jantarPedido > 1) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "Só pode escolher uma opção de horário para o almoço, e uma para o jantar."]);
+            exit();
+        }
+
+        if ($almocoPedido === 1 || $jantarPedido === 1) {
+            $stmtExist = $conn->prepare("SELECT almoco, almoco_mais_cedo, almoco_mais_tarde, jantar, jantar_mais_cedo, jantar_mais_tarde FROM refeicoes WHERE nome_completo = ? AND data = ?");
+            $stmtExist->bind_param("ss", $nome_completo, $data_refeicao);
+            $stmtExist->execute();
+            $existentes = stmt_get_result($stmtExist)->fetch_all(MYSQLI_ASSOC);
+            $stmtExist->close();
+
+            $almocoExistente = 0;
+            $jantarExistente = 0;
+            foreach ($existentes as $row) {
+                $almocoExistente += (int) $row['almoco'] + (int) $row['almoco_mais_cedo'] + (int) $row['almoco_mais_tarde'];
+                $jantarExistente += (int) $row['jantar'] + (int) $row['jantar_mais_cedo'] + (int) $row['jantar_mais_tarde'];
+            }
+
+            if ($almocoPedido === 1 && $almocoExistente >= 1) {
+                http_response_code(409);
+                echo json_encode(["status" => "error", "message" => "Este visitante já está inscrito noutra opção de almoço para este dia."]);
+                exit();
+            }
+            if ($jantarPedido === 1 && $jantarExistente >= 1) {
+                http_response_code(409);
+                echo json_encode(["status" => "error", "message" => "Este visitante já está inscrito noutra opção de jantar para este dia."]);
+                exit();
+            }
+        }
+
         // Verificar se o nome já está inscrito para a mesma refeição no mesmo dia
         $check_sql = "SELECT * FROM refeicoes WHERE nome_completo = ? AND data = ? AND (
             (levar_refeicao = ? AND levar_refeicao = 1) OR
