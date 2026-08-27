@@ -11,8 +11,18 @@ if (!hash_equals($tokenEsperado, $recebido)) {
     echo json_encode(['error' => 'acesso negado']);
     exit;
 }
-header('Content-Type: application/json; charset=utf-8');
 date_default_timezone_set('Europe/Lisbon');
+
+if (isset($_GET['log'])) {
+    header('Content-Type: text/plain; charset=utf-8');
+    $logfile = __DIR__ . '/enviar_lembretes_cron.log';
+    if (!file_exists($logfile)) { echo "log não existe\n"; exit; }
+    $linhas = file($logfile);
+    echo implode('', array_slice($linhas, -30));
+    exit;
+}
+
+header('Content-Type: application/json; charset=utf-8');
 
 $email = $_GET['email'] ?? '';
 if (!$email) {
