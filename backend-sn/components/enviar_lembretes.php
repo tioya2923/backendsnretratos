@@ -14,15 +14,27 @@ require_once __DIR__ . '/presenca_utils.php';
 
 // Só aceita chamadas do disparador de cron (evita que qualquer pessoa na
 // internet dispare envios em massa de email a todos os utilizadores).
-$cronSecret = getenv('CRON_SECRET');
-$recebido   = $_SERVER['HTTP_X_CRON_SECRET'] ?? '';
+//
+// Dois segredos válidos, de propósito separados:
+// - CRON_SECRET (variável de ambiente, .env) — usado pelo GitHub Actions.
+// - EXTERNAL_CRON_TOKEN (fixo aqui no código, não no .env) — usado por um
+//   disparador externo (cron-job.org), para não depender de acesso ao
+//   cPanel para configurar. O GitHub Actions sozinho não é fiável (já se
+//   viram gaps de várias horas, incluindo uma incidência confirmada na
+//   própria página de estado do GitHub) — isto dá um segundo disparador,
+//   independente, que corre à hora certa. Se precisar de revogar só este,
+//   basta mudar esta constante e fazer deploy — não mexe no CRON_SECRET.
+define('EXTERNAL_CRON_TOKEN', '365a3a7f1da4ea2e13c13f35ecb586f2a859f2b25e0e7595');
+
+$cronSecret      = getenv('CRON_SECRET');
+$recebidoCron    = $_SERVER['HTTP_X_CRON_SECRET'] ?? '';
+$recebidoExterno = $_SERVER['HTTP_X_EXTERNAL_CRON_TOKEN'] ?? '';
+
 if (php_sapi_name() !== 'cli') {
-    if (!$cronSecret) {
-        http_response_code(500);
-        echo json_encode(['error' => 'CRON_SECRET não está configurado no servidor']);
-        exit;
-    }
-    if (!hash_equals($cronSecret, $recebido)) {
+    $okCron    = $cronSecret && hash_equals($cronSecret, $recebidoCron);
+    $okExterno = hash_equals(EXTERNAL_CRON_TOKEN, $recebidoExterno);
+
+    if (!$okCron && !$okExterno) {
         http_response_code(403);
         echo json_encode(['error' => 'Acesso negado']);
         exit;
