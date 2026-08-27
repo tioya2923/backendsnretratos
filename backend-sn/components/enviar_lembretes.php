@@ -214,17 +214,20 @@ function enviarLembretes() {
         $horaEnvioTs = strtotime("today $horaEnvio");
 
         // O GitHub Actions não garante a cadência de 5 em 5 min do cron.yml
-        // — já se viram falhas de 20 min a quase 2h entre disparos. Uma
-        // janela simétrica (ex.: ±35 min) já falhou duas vezes por causa
-        // disto: se NENHUM disparo caísse dentro da janela, o lembrete
-        // desse dia perdia-se para sempre. Agora só há um limite "cedo
-        // demais" (35 min antes do envio); do lado tardio, dispara até
-        // algumas horas depois da própria refeição — atrasado é sempre
-        // melhor do que não sair — e marcarComoEnviado() abaixo continua a
+        // — já se viram falhas de 20 min a mais de 2h entre disparos (sem
+        // cron nativo no servidor a fazer de rede de segurança, ficamos
+        // 100% dependentes do agendamento do GitHub, que é sempre "melhor
+        // esforço"). Uma janela simétrica (ex.: ±35 min) já falhou duas
+        // vezes por causa disto: se NENHUM disparo caísse dentro da
+        // janela, o lembrete desse dia perdia-se para sempre. Agora só há
+        // um limite "cedo demais" (35 min antes do envio); do lado
+        // tardio, dispara até 5h depois da própria refeição — folga
+        // generosa para os gaps já observados — atrasado é sempre melhor
+        // do que não sair, e marcarComoEnviado() abaixo continua a
         // garantir um único envio por dia.
         $horaRefeicaoTs = strtotime("today $horaRefeicao");
         $cedoDemais  = $agora < ($horaEnvioTs - 2100);
-        $tardeDemais = $agora > ($horaRefeicaoTs + 3 * 3600);
+        $tardeDemais = $agora > ($horaRefeicaoTs + 5 * 3600);
         if ($cedoDemais || $tardeDemais) {
             logMsg("[DEBUG] Hora actual ($horaAgora) fora da janela de envio (a partir de " . date('H:i', $horaEnvioTs - 2100) . ", até 3h depois da refeição) para $tipo. A saltar.");
             continue;
@@ -318,19 +321,21 @@ function enviarLembretes() {
 function notificarAtividades() {
     global $conn;
 
-    // O limite de baixo (-3h, era -15min) existe para recuperar atividades
+    // O limite de baixo (-5h, era -15min) existe para recuperar atividades
     // "perdidas" por falhas do cron do GitHub Actions (já se viram gaps de
-    // quase 2h sem nenhum disparo) — como esta janela desliza com o
-    // "agora" a cada execução, uma atividade cujo horário já tenha ficado
-    // para trás do limite antigo nunca mais voltava a entrar na consulta,
-    // e o aviso perdia-se de vez. ultima_notificacao IS NULL continua a
-    // garantir um único aviso por atividade, mesmo com a janela maior.
+    // mais de 2h sem nenhum disparo, e sem cron nativo no servidor como
+    // rede de segurança, ficamos 100% dependentes do agendamento do
+    // GitHub) — como esta janela desliza com o "agora" a cada execução,
+    // uma atividade cujo horário já tenha ficado para trás do limite
+    // antigo nunca mais voltava a entrar na consulta, e o aviso
+    // perdia-se de vez. ultima_notificacao IS NULL continua a garantir
+    // um único aviso por atividade, mesmo com a janela maior.
     //
     // Comparação por datetime completo (não só TIME(hora_inicio)) — perto
-    // da meia-noite, "-3 horas" cai no dia anterior, e um BETWEEN só com
+    // da meia-noite, "-5 horas" cai no dia anterior, e um BETWEEN só com
     // horas (sem a data) fica invertido (min > max) e nunca dá match
     // nenhum nesse período do dia.
-    $dtMin = date('Y-m-d H:i:s', strtotime('-3 hours'));
+    $dtMin = date('Y-m-d H:i:s', strtotime('-5 hours'));
     $dtMax = date('Y-m-d H:i:s', strtotime('+40 minutes'));
 
     $stmt = $conn->prepare("
