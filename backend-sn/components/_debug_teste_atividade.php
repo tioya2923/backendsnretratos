@@ -13,6 +13,16 @@ if (!hash_equals($tokenEsperado, $recebido)) {
 }
 date_default_timezone_set('Europe/Lisbon');
 
+if (isset($_GET['delete'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    $id = (int) $_GET['delete'];
+    $del = $conn->prepare("DELETE FROM atividades_usuario WHERE id = ?");
+    $del->bind_param("i", $id);
+    $del->execute();
+    echo json_encode(['status' => 'success', 'apagadas' => $del->affected_rows]);
+    exit;
+}
+
 if (isset($_GET['log'])) {
     header('Content-Type: text/plain; charset=utf-8');
     $logfile = __DIR__ . '/enviar_lembretes_cron.log';
