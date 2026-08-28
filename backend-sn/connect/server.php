@@ -3,9 +3,16 @@ require 'cors.php'; // Habilita o CORS
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/mysqli_polyfill.php'; // stmt_get_result(): funciona com ou sem mysqlnd
 
-// Carregar variáveis do .env corretamente a partir da raiz do projeto
+// Carregar variáveis do .env corretamente a partir da raiz do projeto.
+// .env.deploy é opcional e só existe se for gerado pelo deploy do GitHub
+// Actions (a partir de um Secret do repositório) — permite configurar
+// coisas como o BREVO_API_KEY sem precisar de editar ficheiros no
+// servidor via cPanel. Nunca escreve nem apaga o .env principal.
 if (class_exists('Dotenv\Dotenv')) {
-    $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__, 2));
+    // shortCircuit=false é essencial aqui — por omissão o Dotenv para na
+    // primeira lista que encontrar (.env, que existe sempre), e nunca
+    // chegaria a ler o .env.deploy a seguir.
+    $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__, 2), ['.env', '.env.deploy'], false);
     $envVars = $dotenv->safeLoad();
     // Forçar variáveis do .env para getenv, $_ENV e $_SERVER
     foreach ($envVars as $key => $value) {

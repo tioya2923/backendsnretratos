@@ -26,6 +26,18 @@ jobs:
       - name: Instalar dependências (sem devDependencies)
         run: composer install --no-dev --optimize-autoloader --no-interaction
 
+      # Ficheiro à parte do .env principal (nunca tocado por este workflow)
+      # — permite configurar segredos como o BREVO_API_KEY a partir de
+      # Secrets do GitHub, sem precisar de editar nada no servidor via
+      # cPanel. Só é criado (e só sobrescreve a si próprio) se o secret
+      # existir; sem ele, fica vazio e o server.php ignora-o normalmente.
+      - name: Gerar .env.deploy (segredos configurados no GitHub)
+        run: |
+          : > .env.deploy
+          if [ -n "${{ secrets.BREVO_API_KEY }}" ]; then
+            echo "BREVO_API_KEY=${{ secrets.BREVO_API_KEY }}" >> .env.deploy
+          fi
+
       - name: Enviar ficheiros por FTP/FTPS para a PTisp
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
