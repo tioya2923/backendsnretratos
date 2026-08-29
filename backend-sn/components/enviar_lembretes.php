@@ -241,7 +241,7 @@ function enviarLembretes() {
         $cedoDemais  = $agora < ($horaEnvioTs - 2100);
         $tardeDemais = $agora > ($horaRefeicaoTs + 5 * 3600);
         if ($cedoDemais || $tardeDemais) {
-            logMsg("[DEBUG] Hora actual ($horaAgora) fora da janela de envio (a partir de " . date('H:i', $horaEnvioTs - 2100) . ", até 3h depois da refeição) para $tipo. A saltar.");
+            logMsg("[DEBUG] Hora actual ($horaAgora) fora da janela de envio (a partir de " . date('H:i', $horaEnvioTs - 2100) . ", até 5h depois da refeição) para $tipo. A saltar.");
             continue;
         }
 
@@ -370,6 +370,21 @@ function notificarAtividades() {
     }
 
     foreach ($atividades as $atv) {
+        // Reivindica esta atividade ANTES de enviar, não depois — desde
+        // que passámos a ter dois disparadores independentes (GitHub
+        // Actions + cron-job.org, ver EXTERNAL_CRON_TOKEN acima), os dois
+        // podem correr dentro da mesma janela de 5 min e fazer o SELECT
+        // de cima antes de qualquer um marcar ultima_notificacao — sem
+        // esta reivindicação atómica, ambos enviavam a mesma notificação
+        // (push + email) à mesma pessoa. O WHERE ultima_notificacao IS
+        // NULL garante que só um dos dois processos ganha.
+        $upd = $conn->prepare("UPDATE atividades_usuario SET ultima_notificacao = NOW() WHERE id = ? AND ultima_notificacao IS NULL");
+        $upd->bind_param("i", $atv['id']);
+        $upd->execute();
+        if ($upd->affected_rows === 0) {
+            continue; // outro processo já reivindicou esta atividade entretanto
+        }
+
         $hora   = substr($atv['hora_inicio'], 0, 5);
         $titulo = ucfirst(mb_strtolower($atv['nome_atividade'], 'UTF-8'));
         $nome   = trim($atv['name']);
@@ -392,10 +407,6 @@ function notificarAtividades() {
             1800,
             'high'
         );
-
-        $upd = $conn->prepare("UPDATE atividades_usuario SET ultima_notificacao = NOW() WHERE id = ?");
-        $upd->bind_param("i", $atv['id']);
-        $upd->execute();
 
         logMsg("[Atividade Push OK] User {$atv['user_id']}: $titulo às $hora");
     }
@@ -647,12 +658,19 @@ function criarTabelaRelatorioQuinzenal($conn) {
     ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
     // Migração: a versão antiga desta tabela não tinha 'periodo' (o envio
-    // era "15 dias depois do último", sem data fixa nenhuma). Uma linha
-    // antiga sem período não corresponde a nenhum período novo, por isso
-    // fica só como histórico — não bloqueia nada do novo calendário.
+    // era "15 dias depois do último", sem data fixa nenhuma) e podia ter
+    // várias linhas. Todas ficam com periodo='' depois do ADD COLUMN — se
+    // fossem 2 ou mais, o ADD UNIQUE KEY a seguir falhava (chave
+    // duplicada) e, como este projeto nunca desliga o modo de exceções do
+    // mysqli (o padrão do PHP 8.1), isso rebentava o script do cron a
+    // meio, antes até de processar a fila de emails. As linhas antigas
+    // não correspondem a nenhum período novo (só o código novo grava um
+    // periodo real, nunca ''), por isso apagam-se com segurança — não é
+    // histórico útil, é só o resultado do mecanismo antigo já substituído.
     $temColuna = $conn->query("SHOW COLUMNS FROM relatorio_quinzenal_log LIKE 'periodo'")->num_rows > 0;
     if (!$temColuna) {
         $conn->query("ALTER TABLE relatorio_quinzenal_log ADD COLUMN periodo VARCHAR(10) NOT NULL DEFAULT '' AFTER id");
+        $conn->query("DELETE FROM relatorio_quinzenal_log WHERE periodo = ''");
         $conn->query("ALTER TABLE relatorio_quinzenal_log ADD UNIQUE KEY unique_periodo (periodo)");
     }
 }
@@ -830,7 +848,7 @@ function processarEmailsPendentes() {
     // arriscava-se a ainda estar a processar quando o próximo disparo
     // chegasse. Desiste ao fim de 5 tentativas falhadas (fica só em log).
     $res = $conn->query("
-        SELECT id, destinatario, assunto, corpo, is_html
+        SELECT id, destinatario, assunto, corpo, is_html, tentativas
         FROM emails_pendentes
         WHERE enviado_em IS NULL AND tentativas < 5
         ORDER BY id
@@ -843,6 +861,28 @@ function processarEmailsPendentes() {
     $enviados = 0;
     $falhas   = [];
     foreach ($emails as $row) {
+        // Reivindica este email ANTES de o enviar (incrementa já
+        // tentativas), não depois — com dois disparadores independentes
+        // (GitHub Actions + cron-job.org) a poderem correr dentro da
+        // mesma janela de 5 min, ambos podiam fazer o SELECT de cima
+        // antes de qualquer um gravar o resultado, e enviar o mesmo
+        // email em duplicado (ex.: o relatório quinzenal aos admins,
+        // duas vezes). "tentativas = ?" (o valor exato lido acima, não só
+        // "< 5") é o que fecha mesmo a porta: assim que um processo grava
+        // o incremento, o valor deixa de bater certo para o outro — um
+        // simples "< 5" não servia, porque os dois liam o mesmo valor
+        // antes de qualquer um escrever, e ambos continuavam a passar
+        // nesse teste depois.
+        $tentativasLidas = (int) $row['tentativas'];
+        $claim = $conn->prepare("UPDATE emails_pendentes SET tentativas = tentativas + 1 WHERE id = ? AND enviado_em IS NULL AND tentativas = ?");
+        $claim->bind_param("ii", $row['id'], $tentativasLidas);
+        $claim->execute();
+        $ganhou = $claim->affected_rows > 0;
+        $claim->close();
+        if (!$ganhou) {
+            continue; // outro processo já reivindicou esta linha entretanto
+        }
+
         $erro = null;
         $ok = sendEmail($row['destinatario'], $row['assunto'], $row['corpo'], (bool) $row['is_html'], $erro);
         if ($ok) {
@@ -852,10 +892,6 @@ function processarEmailsPendentes() {
             $upd->close();
             $enviados++;
         } else {
-            $upd = $conn->prepare("UPDATE emails_pendentes SET tentativas = tentativas + 1 WHERE id = ?");
-            $upd->bind_param("i", $row['id']);
-            $upd->execute();
-            $upd->close();
             // Antes, a razão exata só ia para o error_log do servidor —
             // invisível no log do cron. Regista aqui também, para dar
             // visibilidade imediata sem precisar de acesso ao servidor.
