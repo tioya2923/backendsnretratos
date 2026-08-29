@@ -641,8 +641,20 @@ function lembrarMensagensNaoLidas() {
 function criarTabelaRelatorioQuinzenal($conn) {
     $conn->query("CREATE TABLE IF NOT EXISTS relatorio_quinzenal_log (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        enviado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        periodo VARCHAR(10) NOT NULL,
+        enviado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_periodo (periodo)
     ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+
+    // Migração: a versão antiga desta tabela não tinha 'periodo' (o envio
+    // era "15 dias depois do último", sem data fixa nenhuma). Uma linha
+    // antiga sem período não corresponde a nenhum período novo, por isso
+    // fica só como histórico — não bloqueia nada do novo calendário.
+    $temColuna = $conn->query("SHOW COLUMNS FROM relatorio_quinzenal_log LIKE 'periodo'")->num_rows > 0;
+    if (!$temColuna) {
+        $conn->query("ALTER TABLE relatorio_quinzenal_log ADD COLUMN periodo VARCHAR(10) NOT NULL DEFAULT '' AFTER id");
+        $conn->query("ALTER TABLE relatorio_quinzenal_log ADD UNIQUE KEY unique_periodo (periodo)");
+    }
 }
 
 function enviarRelatorioQuinzenal() {
@@ -650,25 +662,38 @@ function enviarRelatorioQuinzenal() {
 
     criarTabelaRelatorioQuinzenal($conn);
 
-    // Só corre se já passaram 15 dias desde o último envio (ou nunca foi
-    // enviado). Ao contrário dos outros lembretes (que verificam "hoje é o
-    // dia certo?"), este não depende de um dia fixo do calendário — fica
-    // resiliente a falhas/pausas do cron: mesmo que um disparo falhe, o
-    // próximo simplesmente vê que já passaram 15+ dias e envia na mesma.
-    $res = $conn->query("SELECT MAX(enviado_em) AS ultimo FROM relatorio_quinzenal_log");
-    $ultimoEnvio = $res ? ($res->fetch_assoc()['ultimo'] ?? null) : null;
+    // Calendário fixo, por pedido: um relatório a cada 15 dias, sempre a
+    // começar no dia 1 do mês — ou seja, sai no dia 1 (cobrindo a segunda
+    // metade do mês anterior) e no dia 16 (cobrindo a primeira metade do
+    // mês atual). Janela de alguns dias de folga (não só o próprio dia 1
+    // ou 16) para aguentar falhas do cron — o "periodo" é que garante um
+    // único envio por metade de mês, não a data exata em que corre.
+    $diaMes = (int) date('j');
 
-    if ($ultimoEnvio !== null) {
-        $dias = (strtotime(date('Y-m-d')) - strtotime(date('Y-m-d', strtotime($ultimoEnvio)))) / 86400;
-        if ($dias < 15) return;
+    if ($diaMes >= 1 && $diaMes <= 3) {
+        // Período A: dia 16 a fim do mês ANTERIOR
+        $fim     = date('Y-m-t', strtotime('first day of last month'));
+        $inicio  = date('Y-m-16', strtotime($fim));
+        $periodo = date('Y-m', strtotime($fim)) . '-A';
+    } elseif ($diaMes >= 16 && $diaMes <= 18) {
+        // Período B: dia 1 a 15 do mês ATUAL
+        $inicio  = date('Y-m-01');
+        $fim     = date('Y-m-15');
+        $periodo = date('Y-m') . '-B';
+    } else {
+        return;
     }
 
-    // Regista já o envio (antes de construir/mandar o email) para que, se
-    // o cron disparar de novo dentro dos próximos 5 minutos, não duplique.
-    $conn->query("INSERT INTO relatorio_quinzenal_log (enviado_em) VALUES (NOW())");
+    // Idempotência: garante um único envio por período (metade de mês),
+    // mesmo que o cron dispare várias vezes dentro da janela de folga.
+    $stmtLog = $conn->prepare("INSERT IGNORE INTO relatorio_quinzenal_log (periodo) VALUES (?)");
+    $stmtLog->bind_param("s", $periodo);
+    $stmtLog->execute();
+    if ($stmtLog->affected_rows === 0) {
+        logMsg("[Relatório Quinzenal] Período '$periodo' já enviado. A saltar.");
+        return;
+    }
 
-    $fim    = date('Y-m-d');
-    $inicio = date('Y-m-d', strtotime('-14 days'));
     $periodoFormatado = date('d/m/Y', strtotime($inicio)) . ' a ' . date('d/m/Y', strtotime($fim));
 
     logMsg("[LOG] Iniciando relatório quinzenal de inscrições ($periodoFormatado)...");
