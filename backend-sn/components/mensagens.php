@@ -190,35 +190,27 @@ if ($method === 'POST') {
 
     echo json_encode(['success' => true]);
 
-    // Notificar destinatários (push + email), após responder ao pedido
+    // Notificar destinatários — só push, de propósito. Uma mensagem nova
+    // não vai por email; o email só entra mais tarde, se continuar por
+    // ler há mais de 24h (lembrarMensagensNaoLidas(), em
+    // enviar_lembretes.php) — receber logo os dois para a mesma mensagem
+    // era redundante.
     $notifBody = mb_strlen($corpo) > 100 ? mb_substr($corpo, 0, 97) . '…' : $corpo;
 
-    // Título/corpo distinguem claramente mensagem para todos de mensagem pessoal
+    // Título distingue claramente mensagem para todos de mensagem pessoal
     $pushTitulo = $pushToAll ? "$senderName · mensagem para todos" : "$senderName · nova mensagem";
-    $assunto    = $pushToAll
-        ? "Nova mensagem de $senderName para toda a comunidade"
-        : "Nova mensagem de $senderName";
-    $rotulo     = $pushToAll ? 'enviou uma mensagem para toda a comunidade' : 'enviou-te uma mensagem';
 
-    $notifUsuarios = [];
+    $notifUserIds = [];
     if ($pushToAll) {
         // Todos os utilizadores aprovados exceto o remetente
-        $allUsersStmt = $conn->prepare("SELECT id, name, email FROM usuarios WHERE id != ? AND status = 'aprovado'");
+        $allUsersStmt = $conn->prepare("SELECT id FROM usuarios WHERE id != ? AND status = 'aprovado'");
         $allUsersStmt->bind_param("i", $userId);
         $allUsersStmt->execute();
-        $notifUsuarios = stmt_get_result($allUsersStmt)->fetch_all(MYSQLI_ASSOC);
+        $notifUserIds = array_map(fn($u) => (int) $u['id'], stmt_get_result($allUsersStmt)->fetch_all(MYSQLI_ASSOC));
         $allUsersStmt->close();
     } elseif (!empty($pushUserIds)) {
-        $placeholders = implode(',', array_fill(0, count($pushUserIds), '?'));
-        $typesStr     = str_repeat('i', count($pushUserIds));
-        $destStmt = $conn->prepare("SELECT id, name, email FROM usuarios WHERE id IN ($placeholders)");
-        $destStmt->bind_param($typesStr, ...$pushUserIds);
-        $destStmt->execute();
-        $notifUsuarios = stmt_get_result($destStmt)->fetch_all(MYSQLI_ASSOC);
-        $destStmt->close();
+        $notifUserIds = array_map('intval', $pushUserIds);
     }
-
-    $notifUserIds = array_map(fn($u) => (int) $u['id'], $notifUsuarios);
 
     if (!empty($notifUserIds)) {
         sendPushNotification(
@@ -233,15 +225,6 @@ if ($method === 'POST') {
         );
     }
 
-    $link = rtrim(getenv('FRONTEND_URL') ?: '', '/') . '/mensagens';
-    foreach ($notifUsuarios as $u) {
-        $nomeDest = trim($u['name']);
-        $bodyHtml = "Olá, <strong>$nomeDest</strong>!<br><br><strong>$senderName</strong> $rotulo:<br><em>\"" . htmlspecialchars($notifBody) . "\"</em><br><br><a href='$link'>Vê a mensagem</a>";
-
-        if (!empty($u['email'])) {
-            sendEmail($u['email'], $assunto, $bodyHtml, true);
-        }
-    }
     exit;
 }
 
