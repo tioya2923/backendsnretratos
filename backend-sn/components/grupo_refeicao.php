@@ -19,7 +19,7 @@ garantirColunaNumeroPessoas($conn);
 // uma (antes não exigia nenhuma — a agenda de refeições de grupo ficava
 // visível a qualquer pessoa na internet, sem login nenhum).
 requireAnySession($conn);
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'DELETE') {
     requireAdmin($conn);
 }
 
@@ -107,6 +107,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && !isset($_GET['grupo_id'])) {
     }
     echo json_encode(array_values($grupos));
     $conn->close();
+    exit();
+}
+
+// Remover um grupo de uma refeição específica (não apaga o grupo em si,
+// só desmarca-o dessa data/tipo — o grupo continua a existir para se
+// marcar noutras refeições).
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    $id = isset($data['id']) ? intval($data['id']) : 0;
+    if ($id <= 0) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "ID inválido"]);
+        exit();
+    }
+
+    $stmt = $conn->prepare("DELETE FROM refeicoes_grupos WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+
+    if ($stmt->affected_rows === 0) {
+        http_response_code(404);
+        echo json_encode(["status" => "error", "message" => "Marcação não encontrada"]);
+        $stmt->close();
+        exit();
+    }
+
+    echo json_encode(["status" => "success", "message" => "Grupo removido dessa refeição"]);
+    $stmt->close();
     exit();
 }
 
