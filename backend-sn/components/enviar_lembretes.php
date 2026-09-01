@@ -716,6 +716,30 @@ function enviarRelatorioQuinzenal() {
 
     logMsg("[LOG] Iniciando relatório quinzenal de inscrições ($periodoFormatado)...");
 
+    $relatorio = gerarCorpoRelatorioQuinzenal($conn, $inicio, $fim, $periodoFormatado);
+
+    // enfileirarEmail(), não sendEmail() direto — o envio síncrono por SMTP
+    // falha aqui (porta bloqueada na PTisp, mesma causa já corrigida no
+    // registo). Fica em fila e o processarEmailsPendentes() mais abaixo
+    // (já corre a cada ciclo deste script) trata da entrega, com retries.
+    $resAdmins = $conn->query("SELECT email_admin FROM admins");
+    $enfileirados = 0;
+    while ($admin = $resAdmins->fetch_assoc()) {
+        if (empty($admin['email_admin'])) continue;
+        enfileirarEmail($conn, $admin['email_admin'], "Relatório quinzenal de inscrições ($periodoFormatado)", $relatorio['body'], true);
+        $enfileirados++;
+    }
+
+    logMsg("[Relatório Quinzenal] Enfileirado para $enfileirados administrador(es). Confirmaram: {$relatorio['totalConfirmaram']} | Faltaram: {$relatorio['totalFaltaram']} | Não se inscreveram: {$relatorio['totalNaoInscritos']}");
+}
+
+/**
+ * Monta o HTML do relatório quinzenal para um período — extraído de
+ * enviarRelatorioQuinzenal() para poder ser reutilizado por um envio de
+ * pré-visualização, sem duplicar a lógica (e sem correr o risco de as
+ * duas versões divergirem com o tempo).
+ */
+function gerarCorpoRelatorioQuinzenal(mysqli $conn, string $inicio, string $fim, string $periodoFormatado): array {
     // Todas as inscrições do período, para cruzar com as confirmações de
     // presença — cada linha da tabela refeicoes pode cobrir várias
     // variantes ao mesmo tempo (ex.: almoço normal + takeaway), por isso
@@ -844,19 +868,12 @@ function enviarRelatorioQuinzenal() {
         </div>
     ";
 
-    // enfileirarEmail(), não sendEmail() direto — o envio síncrono por SMTP
-    // falha aqui (porta bloqueada na PTisp, mesma causa já corrigida no
-    // registo). Fica em fila e o processarEmailsPendentes() mais abaixo
-    // (já corre a cada ciclo deste script) trata da entrega, com retries.
-    $resAdmins = $conn->query("SELECT email_admin FROM admins");
-    $enfileirados = 0;
-    while ($admin = $resAdmins->fetch_assoc()) {
-        if (empty($admin['email_admin'])) continue;
-        enfileirarEmail($conn, $admin['email_admin'], "Relatório quinzenal de inscrições ($periodoFormatado)", $body, true);
-        $enfileirados++;
-    }
-
-    logMsg("[Relatório Quinzenal] Enfileirado para $enfileirados administrador(es). Confirmaram: " . count($confirmaram) . " | Faltaram: " . count($faltaram) . " | Não se inscreveram: " . count($naoInscritos));
+    return [
+        'body' => $body,
+        'totalConfirmaram' => count($confirmaram),
+        'totalFaltaram' => count($faltaram),
+        'totalNaoInscritos' => count($naoInscritos),
+    ];
 }
 
 // ---------------------------------------------------------------------------
