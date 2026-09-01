@@ -781,12 +781,12 @@ function enviarRelatorioQuinzenal() {
             if (!janelaJaFechou($tipo, $r['data'])) continue;
 
             $dataFormatada = date('d/m/Y', strtotime($r['data']));
-            $entrada       = "$nome — $dataFormatada — $tipoLabel";
+            $linha         = [$nome, $dataFormatada, $tipoLabel];
 
             if (isset($confirmadosSet["{$r['id']}|$tipo"])) {
-                $confirmaram[] = $entrada;
+                $confirmaram[] = $linha;
             } else {
-                $faltaram[] = $entrada;
+                $faltaram[] = $linha;
             }
         }
     }
@@ -801,21 +801,37 @@ function enviarRelatorioQuinzenal() {
         }
     }
 
-    $paraLista = function (array $itens) {
-        if (empty($itens)) return '<p><em>Ninguém.</em></p>';
-        $li = array_map(fn($n) => '<li>' . htmlspecialchars($n) . '</li>', $itens);
-        return '<ul>' . implode('', $li) . '</ul>';
+    // Tabela em vez de lista simples — mais fácil de ler quando há muitas
+    // linhas (o relatório já teve mais de 70 na secção "Faltaram"). Estilos
+    // sempre inline (style="...", nunca <style> à parte): a maioria dos
+    // clientes de email, incluindo o Gmail, ignora ou corta blocos <style>.
+    $paraTabela = function (array $linhas, array $colunas) {
+        if (empty($linhas)) return '<p><em>Ninguém.</em></p>';
+        $th = implode('', array_map(
+            fn($c) => '<th style="text-align:left;padding:6px 10px;border-bottom:2px solid #4b0303;background:#f4f1ea;">' . htmlspecialchars($c) . '</th>',
+            $colunas
+        ));
+        $corpoLinhas = '';
+        foreach ($linhas as $linha) {
+            $tds = implode('', array_map(
+                fn($v) => '<td style="padding:6px 10px;border-bottom:1px solid #ddd;">' . htmlspecialchars($v) . '</td>',
+                $linha
+            ));
+            $corpoLinhas .= "<tr>$tds</tr>";
+        }
+        return '<table style="border-collapse:collapse;width:100%;font-size:14px;margin-bottom:16px;" cellpadding="0" cellspacing="0">'
+             . "<thead><tr>$th</tr></thead><tbody>$corpoLinhas</tbody></table>";
     };
 
     $body = "
         <h2>Relatório quinzenal de inscrições</h2>
         <p>Período: <strong>$periodoFormatado</strong></p>
         <h3>Confirmaram presença (" . count($confirmaram) . ")</h3>
-        " . $paraLista($confirmaram) . "
+        " . $paraTabela($confirmaram, ['Nome', 'Data', 'Refeição']) . "
         <h3>Faltaram — inscreveram-se mas não confirmaram presença (" . count($faltaram) . ")</h3>
-        " . $paraLista($faltaram) . "
+        " . $paraTabela($faltaram, ['Nome', 'Data', 'Refeição']) . "
         <h3>Não se inscreveram em nenhuma refeição (" . count($naoInscritos) . ")</h3>
-        " . $paraLista($naoInscritos) . "
+        " . $paraTabela(array_map(fn($n) => [$n], $naoInscritos), ['Nome']) . "
     ";
 
     // enfileirarEmail(), não sendEmail() direto — o envio síncrono por SMTP
