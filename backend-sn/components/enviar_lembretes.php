@@ -805,16 +805,24 @@ function enviarRelatorioQuinzenal() {
     // linhas (o relatório já teve mais de 70 na secção "Faltaram"). Estilos
     // sempre inline (style="...", nunca <style> à parte): a maioria dos
     // clientes de email, incluindo o Gmail, ignora ou corta blocos <style>.
+    //
+    // Cor de TEXTO explícita em todo o lado onde há cor de FUNDO explícita
+    // — nunca só uma das duas. O Gmail (e outros) têm modo escuro que
+    // reescreve as cores de emails sem indicação clara de tema; ao definir
+    // sempre o par completo (fundo claro + texto escuro), evita-se a
+    // combinação ilegível de inverter só uma das duas. Contraste
+    // verificado (WCAG): #4b0303 sobre #f4f1ea ≈ 14:1, #222 sobre #fff e
+    // sobre #f4f1ea ≈ 16:1 e 15:1 — muito acima do mínimo de 4.5:1.
     $paraTabela = function (array $linhas, array $colunas) {
-        if (empty($linhas)) return '<p><em>Ninguém.</em></p>';
+        if (empty($linhas)) return '<p style="color:#222222;"><em>Ninguém.</em></p>';
         $th = implode('', array_map(
-            fn($c) => '<th style="text-align:left;padding:6px 10px;border-bottom:2px solid #4b0303;background:#f4f1ea;">' . htmlspecialchars($c) . '</th>',
+            fn($c) => '<th style="text-align:left;padding:6px 10px;border-bottom:2px solid #4b0303;background-color:#f4f1ea;color:#4b0303;">' . htmlspecialchars($c) . '</th>',
             $colunas
         ));
         $corpoLinhas = '';
         foreach ($linhas as $linha) {
             $tds = implode('', array_map(
-                fn($v) => '<td style="padding:6px 10px;border-bottom:1px solid #ddd;">' . htmlspecialchars($v) . '</td>',
+                fn($v) => '<td style="padding:6px 10px;border-bottom:1px solid #ddd;background-color:#ffffff;color:#222222;">' . htmlspecialchars($v) . '</td>',
                 $linha
             ));
             $corpoLinhas .= "<tr>$tds</tr>";
@@ -824,14 +832,16 @@ function enviarRelatorioQuinzenal() {
     };
 
     $body = "
-        <h2>Relatório quinzenal de inscrições</h2>
-        <p>Período: <strong>$periodoFormatado</strong></p>
-        <h3>Confirmaram presença (" . count($confirmaram) . ")</h3>
-        " . $paraTabela($confirmaram, ['Nome', 'Data', 'Refeição']) . "
-        <h3>Faltaram — inscreveram-se mas não confirmaram presença (" . count($faltaram) . ")</h3>
-        " . $paraTabela($faltaram, ['Nome', 'Data', 'Refeição']) . "
-        <h3>Não se inscreveram em nenhuma refeição (" . count($naoInscritos) . ")</h3>
-        " . $paraTabela(array_map(fn($n) => [$n], $naoInscritos), ['Nome']) . "
+        <div style=\"background-color:#ffffff;color:#222222;font-family:Arial,Helvetica,sans-serif;\">
+            <h2 style=\"color:#4b0303;\">Relatório quinzenal de inscrições</h2>
+            <p>Período: <strong>$periodoFormatado</strong></p>
+            <h3 style=\"color:#4b0303;\">Confirmaram presença (" . count($confirmaram) . ")</h3>
+            " . $paraTabela($confirmaram, ['Nome', 'Data', 'Refeição']) . "
+            <h3 style=\"color:#4b0303;\">Faltaram — inscreveram-se mas não confirmaram presença (" . count($faltaram) . ")</h3>
+            " . $paraTabela($faltaram, ['Nome', 'Data', 'Refeição']) . "
+            <h3 style=\"color:#4b0303;\">Não se inscreveram em nenhuma refeição (" . count($naoInscritos) . ")</h3>
+            " . $paraTabela(array_map(fn($n) => [$n], $naoInscritos), ['Nome']) . "
+        </div>
     ";
 
     // enfileirarEmail(), não sendEmail() direto — o envio síncrono por SMTP
