@@ -79,6 +79,13 @@ if (!$dataAniversario) {
     exit;
 }
 
+// Idade mínima de 14 anos (a app está declarada como 14+ na Google Play e na
+// política de privacidade). Só se aplica a novos registos.
+if ((new DateTime($dataAniversario))->diff(new DateTime())->y < 14) {
+    echo json_encode(['status' => 'error', 'message' => 'É necessário ter pelo menos 14 anos para se registar']);
+    exit;
+}
+
 if (!empty($data['dataAniversarioSacerdotal']) && !$dataAniversarioSacerdotal) {
     echo json_encode(['status' => 'error', 'message' => 'Data de aniversário sacerdotal inválida']);
     exit;
