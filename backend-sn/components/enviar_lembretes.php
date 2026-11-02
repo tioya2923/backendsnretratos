@@ -42,6 +42,11 @@ if (php_sapi_name() !== 'cli') {
     }
 }
 
+// Continua a correr mesmo que quem a chamou desista de esperar (o disparo
+// de recurso em cron_fallback.php só espera 1s pela resposta).
+ignore_user_abort(true);
+set_time_limit(300);
+
 $conn->set_charset("utf8mb4");
 
 $logfile   = __DIR__ . '/enviar_lembretes_cron.log';

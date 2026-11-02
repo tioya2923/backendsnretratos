@@ -6,6 +6,7 @@ require_once '../connect/auth.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/push_utils.php';
 require_once __DIR__ . '/email_utils.php';
+require_once __DIR__ . '/cron_fallback.php';
 
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
@@ -60,6 +61,9 @@ if ($method === 'GET') {
         $stmt->execute();
         $row = stmt_get_result($stmt)->fetch_assoc();
         echo json_encode(['count' => (int)$row['total']]);
+        // Responde primeiro; só depois dispara (se for preciso) o cron.
+        if (function_exists('fastcgi_finish_request')) { fastcgi_finish_request(); }
+        dispararCronSeNecessario();
         exit;
     }
 
