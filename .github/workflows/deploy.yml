@@ -57,6 +57,7 @@ jobs:
             **/.git*/**
             .github/**
             database/**
+            cron-externo/**
             docker/**
             README.md
             Dockerfile
